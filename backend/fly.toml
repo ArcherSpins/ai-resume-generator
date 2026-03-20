@@ -1,16 +1,8 @@
-# fly.toml app configuration file generated for backend-late-butterfly-6948 on 2026-03-20T14:47:20+09:00
-#
-# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
-#
 
-app = 'backend-late-butterfly-6948'
+app = 'ai-resume-generator-tnqhrg'
 primary_region = 'nrt'
 
 [build]
-
-[env]
-  NODE_ENV = 'production'
-  PORT = '4000'
 
 [http_service]
   internal_port = 3000
