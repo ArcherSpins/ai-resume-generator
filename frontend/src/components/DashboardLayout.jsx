@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { useAuth } from '../services/auth';
 import { useTranslation } from '../i18n/LanguageContext';
@@ -9,12 +9,25 @@ export default function DashboardLayout() {
   const { user, logout } = useAuth();
   const { t, locale, setLocale } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountMenuRef = useRef(null);
 
   useEffect(() => {
     if (menuOpen) document.body.style.overflow = 'hidden';
     else document.body.style.overflow = '';
     return () => { document.body.style.overflow = ''; };
   }, [menuOpen]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!accountMenuRef.current) return;
+      if (!accountMenuRef.current.contains(event.target)) {
+        setAccountMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const navLinkClass = ({ isActive }) =>
     `block rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
@@ -49,14 +62,46 @@ export default function DashboardLayout() {
             </nav>
             <div className="hidden md:flex items-center gap-3">
               <LanguageSwitcher />
-              <span className="text-sm text-slate-500 truncate max-w-[160px]">{user?.email}</span>
-              <button
-                type="button"
-                onClick={logout}
-                className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-200 transition"
-              >
-                {t('logout')}
-              </button>
+              <div className="relative" ref={accountMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setAccountMenuOpen((v) => !v)}
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
+                  aria-haspopup="menu"
+                  aria-expanded={accountMenuOpen}
+                >
+                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">
+                    {(user?.name || user?.email || 'U').slice(0, 1).toUpperCase()}
+                  </span>
+                  <span className="max-w-[110px] truncate">{user?.name || t('account')}</span>
+                  <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {accountMenuOpen && (
+                  <div
+                    role="menu"
+                    className="absolute right-0 mt-2 w-64 rounded-xl border border-slate-200 bg-white p-2 shadow-lg"
+                  >
+                    <div className="px-3 py-2">
+                      <p className="text-xs text-slate-400 uppercase tracking-wide">{t('account')}</p>
+                      <p className="mt-1 text-sm text-slate-700 truncate" title={user?.email}>
+                        {user?.email}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAccountMenuOpen(false);
+                        logout();
+                      }}
+                      className="mt-1 w-full rounded-lg bg-slate-100 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-200 transition"
+                    >
+                      {t('logout')}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Mobile: hamburger */}
