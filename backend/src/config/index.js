@@ -2,10 +2,18 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const rawFrontendUrls = process.env.FRONTEND_URL || 'http://localhost:5173';
+const frontendUrls = rawFrontendUrls
+  .split(',')
+  .map((u) => u.trim())
+  .filter(Boolean)
+  .map((u) => u.replace(/\/$/, ''));
+
 export const config = {
   port: parseInt(process.env.PORT || '4000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
-  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
+  frontendUrl: frontendUrls[0] || 'http://localhost:5173',
+  frontendUrls,
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,

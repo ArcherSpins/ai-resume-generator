@@ -25,7 +25,16 @@ ensureDirs();
 
 app.use(
   cors({
-    origin: config.frontendUrl,
+    origin(origin, callback) {
+      if (!origin) return callback(null, true);
+      const normalized = String(origin).replace(/\/$/, '');
+      const allowed = config.frontendUrls || [config.frontendUrl];
+      const isAllowed =
+        allowed.includes(normalized) ||
+        /^https:\/\/.*\.vercel\.app$/i.test(normalized);
+      if (isAllowed) return callback(null, true);
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
     credentials: true,
   })
 );
