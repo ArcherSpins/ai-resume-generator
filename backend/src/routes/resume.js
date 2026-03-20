@@ -242,16 +242,16 @@ router.post('/', requireAuth, async (req, res, next) => {
         ? generatedFiles[nativeExt]
         : generatedFiles.pdf;
       const attachName = generationMode !== 'voice' && nativeBuffer && nativeExt
-        ? `resume.${nativeExt}`
-        : 'resume.pdf';
+        ? `${base}.${nativeExt}`
+        : `${base}.pdf`;
       // Primary path: send exactly the same stored file as in history.
       await sendResumeEmail(req.user.email, attachPath, attachName, req.user.name);
     } catch (emailErr) {
       // Fallback: if storage read fails, still send in-memory generated file.
       try {
         const attachName = generationMode !== 'voice' && nativeBuffer && nativeExt
-          ? `resume.${nativeExt}`
-          : 'resume.pdf';
+          ? `${base}.${nativeExt}`
+          : `${base}.pdf`;
         const attachBuffer = generationMode !== 'voice' && nativeBuffer && nativeExt
           ? nativeBuffer
           : pdfBuffer;
