@@ -19,6 +19,7 @@ export const config = {
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
   },
   sessionSecret: process.env.SESSION_SECRET || 'change-me-in-production',
+  jwtSecret: process.env.JWT_SECRET || process.env.SESSION_SECRET || 'change-me-in-production',
   backendUrl: (process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 4000}`).replace(/\/$/, ''),
   openai: {
     apiKey: process.env.OPENAI_API_KEY,

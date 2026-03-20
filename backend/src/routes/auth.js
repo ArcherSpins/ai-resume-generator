@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import passport from 'passport';
 import { config } from '../config/index.js';
+import { signAuthToken } from '../utils/jwt.js';
 
 const router = Router();
 
@@ -46,7 +47,10 @@ router.get(
           });
           return next(loginErr);
         }
-        return res.redirect(`${config.frontendUrl}/dashboard`);
+        const token = signAuthToken(user);
+        const redirectUrl = new URL(`${config.frontendUrl}/dashboard`);
+        redirectUrl.searchParams.set('token', token);
+        return res.redirect(redirectUrl.toString());
       });
     })(req, res, next);
   }

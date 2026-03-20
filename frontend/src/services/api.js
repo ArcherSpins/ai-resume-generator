@@ -1,4 +1,14 @@
 const BASE = import.meta.env.VITE_API_URL || '';
+const TOKEN_KEY = 'auth_token';
+
+export function getAuthToken() {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function setAuthToken(token) {
+  if (!token) localStorage.removeItem(TOKEN_KEY);
+  else localStorage.setItem(TOKEN_KEY, token);
+}
 
 class ApiError extends Error {
   constructor(message, payload = {}) {
@@ -11,11 +21,13 @@ class ApiError extends Error {
 }
 
 async function request(url, options = {}) {
+  const token = getAuthToken();
   const res = await fetch(`${BASE}${url}`, {
     ...options,
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
   });
@@ -39,6 +51,9 @@ export const api = {
     const res = await fetch(`${BASE}/upload-sample`, {
       method: 'POST',
       credentials: 'include',
+      headers: {
+        ...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {}),
+      },
       body: form,
     });
     if (!res.ok) {

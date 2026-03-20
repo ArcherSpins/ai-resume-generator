@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { api } from './api';
+import { api, setAuthToken } from './api';
 
 const AuthContext = createContext(null);
 
@@ -8,6 +8,13 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const url = new URL(window.location.href);
+    const tokenFromUrl = url.searchParams.get('token');
+    if (tokenFromUrl) {
+      setAuthToken(tokenFromUrl);
+      url.searchParams.delete('token');
+      window.history.replaceState({}, '', url.toString());
+    }
     api
       .getUser()
       .then((data) => setUser(data))
@@ -24,6 +31,7 @@ export function AuthProvider({ children }) {
     try {
       await api.logout();
     } finally {
+      setAuthToken(null);
       setUser(null);
       window.location.href = '/';
     }
