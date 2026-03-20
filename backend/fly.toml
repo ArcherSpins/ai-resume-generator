@@ -1,5 +1,5 @@
 
-app = 'ai-resume-generator-tnqhrg'
+app = 'ai-resume-generator-app'
 primary_region = 'nrt'
 
 [build]
