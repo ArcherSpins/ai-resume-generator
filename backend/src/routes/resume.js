@@ -166,8 +166,10 @@ router.post('/', requireAuth, async (req, res, next) => {
     } else if (annotatedDocxBase64) {
       const result = await fillDocxTemplate(annotatedDocxBase64, flatData, avatarBase64 || null);
       html = result.html;
-      nativeBuffer = result.docxBuffer;
-      nativeExt = 'docx';
+      // For DOCX templates we now keep PDF as the canonical output,
+      // because avatar rendering is guaranteed in HTML/PDF pipeline.
+      nativeBuffer = null;
+      nativeExt = null;
     } else if (templateXlsxBase64) {
       const result = await fillXlsxTemplate(templateXlsxBase64, flatData, avatarBase64 || null);
       html = result.html;

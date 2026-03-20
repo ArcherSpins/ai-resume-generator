@@ -23,6 +23,7 @@ const SIMPLE_FIELD_IDS = [
   'age',
   'gender',
   'nationality',
+  'postal_code',
   'current_address',
   'phone',
   'email',
@@ -126,9 +127,15 @@ export async function fillDocxTemplate(annotatedDocx, formData, avatarBase64 = n
     ? `<img src="${avatarBase64.replace(/"/g, '&quot;')}" alt="" style="width:30mm;height:40mm;object-fit:cover;display:block;margin:0 auto;" />`
     : '<span style="display:block;width:30mm;height:40mm;border:1px solid #333;background:#fafafa;font-size:9pt;color:#888;text-align:center;line-height:40mm;">写真</span>';
 
-  const filledBody = normalizedHtml
+  let filledBody = normalizedHtml
     .replace(/__PHOTO__/g, photoImg)
     .replace(/__\s*PHOTO\s*__/gi, photoImg);
+  if (hasPhoto && !/__\s*PHOTO\s*__/i.test(normalizedHtml)) {
+    filledBody = filledBody.replace(
+      /(<p[^>]*>\s*写真\s*<\/p>)/i,
+      `<p style="text-align:center;">${photoImg}</p>`
+    );
+  }
 
   const html = `<!DOCTYPE html>
 <html lang="ja">

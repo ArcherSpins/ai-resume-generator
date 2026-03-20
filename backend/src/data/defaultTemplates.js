@@ -593,6 +593,8 @@ const thinBorder = {
   bottom: { style: 'thin' },
   right: { style: 'thin' },
 };
+const labelFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F7FA' } };
+const sectionFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEAEFF5' } };
 
 // ── Build XLSX: JIS 履歴書 (table layout, borders, merged 写真) ──
 async function buildRirekishoXlsx() {
@@ -640,6 +642,14 @@ async function buildRirekishoXlsx() {
       const isDataRow = r > 10 && !sepRows.has(r) && row[0] === '' && row[1] === '' && row[2] === '';
       if (isDataRow && c === 0) cell.alignment.horizontal = 'center';
       if (sepRows.has(r)) cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      if (sepRows.has(r)) {
+        cell.fill = sectionFill;
+        cell.font = { bold: true };
+      }
+      if (c === 0 && cellVal && !sepRows.has(r) && !['年', '以上'].includes(cellVal)) {
+        cell.fill = labelFill;
+        cell.font = { bold: true };
+      }
     });
   });
 
@@ -666,8 +676,6 @@ async function buildRirekishoXlsx() {
 async function buildShokumuXlsx() {
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('職務経歴書', { views: [{ showGridLines: true }] });
-
-  const headerBg = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8E8E8' } };
   const rows = [
     ['氏名', ''],
     ['メールアドレス', ''],
@@ -692,8 +700,12 @@ async function buildShokumuXlsx() {
       cell.value = cellVal;
       cell.border = thinBorder;
       cell.alignment = { vertical: 'top', wrapText: true };
+      if (c === 0 && cellVal && !String(cellVal).startsWith('1.') && !String(cellVal).startsWith('2.') && !String(cellVal).startsWith('3.') && !String(cellVal).startsWith('4.') && !String(cellVal).startsWith('5.')) {
+        cell.fill = labelFill;
+        cell.font = { bold: true };
+      }
       if (r === 6 || r === 8 || r === 10 || r === 12 || r === 14) {
-        cell.fill = headerBg;
+        cell.fill = sectionFill;
         cell.font = { bold: true };
       }
     });
@@ -747,6 +759,14 @@ async function buildRirekishoPhotoXlsx() {
       cell.alignment = { vertical: 'top', wrapText: true };
       if (sepRows.has(r)) cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
       else if (row[0] === '' && row[1] === '' && row[2] === '' && c === 0) cell.alignment.horizontal = 'center';
+      if (sepRows.has(r)) {
+        cell.fill = sectionFill;
+        cell.font = { bold: true };
+      }
+      if (c === 0 && cellVal && !sepRows.has(r) && !['年', '以上'].includes(cellVal)) {
+        cell.fill = labelFill;
+        cell.font = { bold: true };
+      }
     });
   });
   ws.mergeCells('C1:C10');
@@ -800,6 +820,14 @@ async function buildRirekishoFullXlsx() {
       cell.alignment = { vertical: 'top', wrapText: true };
       if (sepRows.has(r)) cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
       else if (row[0] === '' && row[1] === '' && row[2] === '' && c === 0) cell.alignment.horizontal = 'center';
+      if (sepRows.has(r)) {
+        cell.fill = sectionFill;
+        cell.font = { bold: true };
+      }
+      if (c === 0 && cellVal && !sepRows.has(r) && !['年', '以上'].includes(cellVal)) {
+        cell.fill = labelFill;
+        cell.font = { bold: true };
+      }
     });
   });
   ws.mergeCells('C1:C11');
@@ -840,6 +868,10 @@ async function buildShokumuPhotoXlsx() {
       cell.value = cellVal;
       cell.border = thinBorder;
       cell.alignment = { vertical: 'top', wrapText: true };
+      if (c === 0 && cellVal && !String(cellVal).startsWith('1.') && !String(cellVal).startsWith('2.') && !String(cellVal).startsWith('3.') && !String(cellVal).startsWith('4.') && !String(cellVal).startsWith('5.')) {
+        cell.fill = labelFill;
+        cell.font = { bold: true };
+      }
       if (r === 6 || r === 8 || r === 10 || r === 12 || r === 14) { cell.fill = headerBg; cell.font = { bold: true }; }
     });
   });

@@ -239,14 +239,15 @@ export async function xlsxToStyledHtml(buffer, avatarBase64 = null) {
     line-height: 1.5;
     color: #1a1a1a;
     background: #fff;
-    padding: 14mm 16mm;
+    padding: 10mm 10mm;
     margin: 12px auto;
-    max-width: 100%;
+    width: 210mm;
+    min-height: 297mm;
     overflow-x: auto;
     box-shadow: 0 2px 10px rgba(0,0,0,0.08);
     border: 1px solid #d1d5db;
   }
-  table { border-collapse: collapse; border: 1px solid #2c2c2c; margin-bottom: 0; }
+  table { width: 100%; border-collapse: collapse; border: 1px solid #2c2c2c; margin-bottom: 0; }
   td, th { border: 1px solid #2c2c2c; padding: 6px 8px; vertical-align: top; font-size: 10pt; }
   img { display: block; }
 </style>

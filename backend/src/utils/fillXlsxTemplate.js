@@ -31,6 +31,8 @@ const SIMPLE_FIELD_MAP = [
   { label: '性別', id: 'gender' },
   { label: '国籍', id: 'nationality' },
   { label: '本籍地', id: 'nationality' },
+  { label: '郵便番号', id: 'postal_code' },
+  { label: '〒', id: 'postal_code' },
   { label: '現住所', id: 'current_address' },
   { label: '電話', id: 'phone' },
   { label: 'TEL', id: 'phone' },
@@ -65,6 +67,43 @@ const SIMPLE_FIELD_MAP = [
 
 function normalizeText(s) {
   return String(s ?? '').replace(/[\s\u3000\u00a0]/g, '');
+}
+
+function parseAvatarDataUrl(avatarBase64) {
+  if (!avatarBase64 || typeof avatarBase64 !== 'string') return null;
+  const match = avatarBase64.match(/^data:image\/(png|jpe?g|gif|webp);base64,(.+)$/i);
+  if (!match) return null;
+  const extRaw = match[1].toLowerCase();
+  const extension = extRaw === 'jpg' ? 'jpeg' : extRaw;
+  return {
+    extension,
+    buffer: Buffer.from(match[2], 'base64'),
+  };
+}
+
+function parseMerges(ws) {
+  const masterOf = new Map();
+  const merges = ws.model?.merges ?? [];
+  for (const rangeStr of merges) {
+    const [tlStr, brStr] = rangeStr.split(':');
+    if (!tlStr || !brStr) continue;
+    const tlM = tlStr.match(/^([A-Z]+)(\d+)$/);
+    const brM = brStr.match(/^([A-Z]+)(\d+)$/);
+    if (!tlM || !brM) continue;
+    const colToNum = (col) =>
+      String(col)
+        .split('')
+        .reduce((acc, ch) => acc * 26 + ch.charCodeAt(0) - 64, 0);
+    const tlR = parseInt(tlM[2], 10);
+    const tlC = colToNum(tlM[1]);
+    const brR = parseInt(brM[2], 10);
+    const brC = colToNum(brM[1]);
+    masterOf.set(`${tlR},${tlC}`, {
+      rowspan: brR - tlR + 1,
+      colspan: brC - tlC + 1,
+    });
+  }
+  return { masterOf };
 }
 
 // Section keywords that identify separator rows in education/experience tables
@@ -131,18 +170,68 @@ function fillSimpleFields(ws, formData) {
         // Mark cell for photo — replaced by xlsxToStyledHtml
         cell.value = '__PHOTO__';
       } else {
-        // Write into the adjacent cell to the right
-        const targetCol = c + 1;
-        if (targetCol > maxCol) continue;
-        const target = ws.getCell(r, targetCol);
-        const existingNorm = normalizeText(getCellText(target));
-        // Don't overwrite existing labels or already-filled cells
-        if (ALL_LABELS.has(existingNorm)) continue;
+        // Write into a nearby writable cell to the right.
+        let target = null;
+        for (let targetCol = c + 1; targetCol <= Math.min(maxCol, c + 4); targetCol++) {
+          const probe = ws.getCell(r, targetCol);
+          const existingNorm = normalizeText(getCellText(probe));
+          if (!ALL_LABELS.has(existingNorm)) {
+            target = probe;
+            break;
+          }
+        }
+        if (!target) continue;
         const value = formData[bestField.id] != null ? String(formData[bestField.id]) : '';
         target.value = value;
       }
     }
   }
+}
+
+function findPhotoAnchor(ws) {
+  const maxRow = ws.rowCount;
+  const maxCol = ws.columnCount;
+  for (let r = 1; r <= maxRow; r++) {
+    for (let c = 1; c <= maxCol; c++) {
+      const cell = ws.getCell(r, c);
+      const norm = normalizeText(getCellText(cell)).toLowerCase();
+      if (
+        norm === '__photo__' ||
+        norm === '写真' ||
+        norm.includes('写真をはる位置') ||
+        norm.includes('写真を貼る位置') ||
+        norm.includes('写真貼付')
+      ) {
+        return { row: r, col: c };
+      }
+    }
+  }
+  return null;
+}
+
+function embedPhotoInWorksheet(workbook, ws, avatarBase64) {
+  const parsed = parseAvatarDataUrl(avatarBase64);
+  if (!parsed) return;
+
+  const anchor = findPhotoAnchor(ws);
+  if (!anchor) return;
+
+  const { masterOf } = parseMerges(ws);
+  const span = masterOf.get(`${anchor.row},${anchor.col}`) || { rowspan: 4, colspan: 1 };
+  const imageId = workbook.addImage({
+    buffer: parsed.buffer,
+    extension: parsed.extension,
+  });
+
+  ws.getCell(anchor.row, anchor.col).value = '';
+  ws.addImage(imageId, {
+    tl: { col: anchor.col - 1 + 0.03, row: anchor.row - 1 + 0.03 },
+    br: {
+      col: anchor.col - 1 + span.colspan - 0.03,
+      row: anchor.row - 1 + span.rowspan - 0.03,
+    },
+    editAs: 'oneCell',
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -266,6 +355,9 @@ export async function fillXlsxTemplate(xlsxInput, formData, avatarBase64 = null)
     const struct = detectYearMonthCols(ws);
     if (struct) {
       fillSectionRows(ws, struct.yearCol, struct.monthCol, struct.contentCol, formData);
+    }
+    if (hasPhoto) {
+      embedPhotoInWorksheet(workbook, ws, avatarBase64);
     }
   }
 
