@@ -17,6 +17,7 @@
     "@aws-sdk/lib-storage": "^3.700.0",
     "@aws-sdk/s3-request-presigner": "^3.700.0",
     "@prisma/client": "^5.22.0",
+    "connect-pg-simple": "^10.0.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "docxtemplater": "^3.50.0",
@@ -31,6 +32,7 @@
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "pdf-parse": "^1.1.1",
+    "pg": "^8.20.0",
     "pizzip": "^3.1.4",
     "puppeteer": "^23.6.0",
     "xlsx": "^0.18.5"

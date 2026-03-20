@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
+import connectPgSimple from 'connect-pg-simple';
+import pg from 'pg';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { config } from './config/index.js';
@@ -20,6 +22,8 @@ import apiDocsRoutes from './routes/apiDocs.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
+const PgStore = connectPgSimple(session);
+const { Pool } = pg;
 
 ensureDirs();
 app.set('trust proxy', 1);
@@ -41,11 +45,28 @@ app.use(
 );
 app.use(cookieParser());
 app.use(express.json({ limit: '25mb' }));
+
+const databaseUrl = process.env.DATABASE_URL;
+const usePgSessionStore = Boolean(databaseUrl);
+const pgPool = usePgSessionStore
+  ? new Pool({
+      connectionString: databaseUrl,
+      ssl: config.nodeEnv === 'production' ? { rejectUnauthorized: false } : undefined,
+    })
+  : null;
+
 app.use(
   session({
     secret: config.sessionSecret,
     resave: false,
     saveUninitialized: false,
+    store: usePgSessionStore
+      ? new PgStore({
+          pool: pgPool,
+          tableName: 'user_sessions',
+          createTableIfMissing: true,
+        })
+      : undefined,
     cookie: {
       secure: config.nodeEnv === 'production',
       sameSite: config.nodeEnv === 'production' ? 'none' : 'lax',
