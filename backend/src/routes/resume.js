@@ -7,7 +7,7 @@ import { fillXlsxTemplate } from '../utils/fillXlsxTemplate.js';
 import { fillAnnotatedTemplate } from '../utils/fillAnnotatedTemplate.js';
 import { generateJapaneseResumeHtml } from '../utils/generateJapaneseResumeHtml.js';
 import { htmlToPdfBuffer, saveBuffer, getRelativePath } from '../services/pdfService.js';
-import { sendResumeEmailBuffer } from '../services/emailService.js';
+import { sendResumeEmail, sendResumeEmailBuffer } from '../services/emailService.js';
 import { prisma } from '../utils/prisma.js';
 import {
   isS3Configured,
@@ -244,12 +244,21 @@ router.post('/', requireAuth, async (req, res, next) => {
       const attachName = generationMode !== 'voice' && nativeBuffer && nativeExt
         ? `resume.${nativeExt}`
         : 'resume.pdf';
-      const attachBuffer = generationMode !== 'voice' && nativeBuffer && nativeExt
-        ? nativeBuffer
-        : pdfBuffer;
-      await sendResumeEmailBuffer(req.user.email, attachBuffer, attachName, req.user.name);
+      // Primary path: send exactly the same stored file as in history.
+      await sendResumeEmail(req.user.email, attachPath, attachName, req.user.name);
     } catch (emailErr) {
-      console.error('Email send failed:', emailErr);
+      // Fallback: if storage read fails, still send in-memory generated file.
+      try {
+        const attachName = generationMode !== 'voice' && nativeBuffer && nativeExt
+          ? `resume.${nativeExt}`
+          : 'resume.pdf';
+        const attachBuffer = generationMode !== 'voice' && nativeBuffer && nativeExt
+          ? nativeBuffer
+          : pdfBuffer;
+        await sendResumeEmailBuffer(req.user.email, attachBuffer, attachName, req.user.name);
+      } catch (fallbackErr) {
+        console.error('Email send failed:', fallbackErr);
+      }
     }
 
     res.json({
