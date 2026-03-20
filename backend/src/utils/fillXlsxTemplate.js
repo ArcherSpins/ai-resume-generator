@@ -306,6 +306,12 @@ function embedPhotoInWorksheet(workbook, ws, avatarBase64, forcedAnchor = null) 
     ext: { width: 108, height: 144 },
     editAs: 'oneCell',
   });
+  ws.getCell(anchor.row, anchor.col).value = '';
+  const rightCell = ws.getCell(anchor.row, anchor.col + 1);
+  const rightNorm = normalizeText(getCellText(rightCell));
+  if (rightNorm === '写真') {
+    rightCell.value = '';
+  }
 }
 
 function clearPhotoMarkers(ws) {

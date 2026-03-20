@@ -48,3 +48,19 @@ export async function sendResumeEmail(toEmail, attachmentPathOrS3Key, attachment
     attachments: [{ filename, content: attachmentContent }],
   });
 }
+
+export async function sendResumeEmailBuffer(toEmail, attachmentBuffer, attachmentFilename, userName) {
+  const transport = getTransporter();
+  if (!config.smtp.host) {
+    console.warn('SMTP not configured; skipping email to', toEmail);
+    return;
+  }
+  const filename = attachmentFilename || 'resume.pdf';
+  await transport.sendMail({
+    from: config.smtp.from,
+    to: toEmail,
+    subject: 'Your Resume is Ready',
+    text: `Hi${userName ? ` ${userName}` : ''},\n\nYour generated resume is attached.\n\nBest regards,\nAI Resume Builder`,
+    attachments: [{ filename, content: attachmentBuffer }],
+  });
+}

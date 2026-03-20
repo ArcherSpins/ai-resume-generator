@@ -7,7 +7,7 @@ import { fillXlsxTemplate } from '../utils/fillXlsxTemplate.js';
 import { fillAnnotatedTemplate } from '../utils/fillAnnotatedTemplate.js';
 import { generateJapaneseResumeHtml } from '../utils/generateJapaneseResumeHtml.js';
 import { htmlToPdfBuffer, saveBuffer, getRelativePath } from '../services/pdfService.js';
-import { sendResumeEmail } from '../services/emailService.js';
+import { sendResumeEmailBuffer } from '../services/emailService.js';
 import { prisma } from '../utils/prisma.js';
 import {
   isS3Configured,
@@ -244,7 +244,10 @@ router.post('/', requireAuth, async (req, res, next) => {
       const attachName = generationMode !== 'voice' && nativeBuffer && nativeExt
         ? `resume.${nativeExt}`
         : 'resume.pdf';
-      await sendResumeEmail(req.user.email, attachPath, attachName, req.user.name);
+      const attachBuffer = generationMode !== 'voice' && nativeBuffer && nativeExt
+        ? nativeBuffer
+        : pdfBuffer;
+      await sendResumeEmailBuffer(req.user.email, attachBuffer, attachName, req.user.name);
     } catch (emailErr) {
       console.error('Email send failed:', emailErr);
     }

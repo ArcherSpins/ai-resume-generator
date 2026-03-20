@@ -595,6 +595,9 @@ const thinBorder = {
 };
 const labelFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F7FA' } };
 const sectionFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEAEFF5' } };
+const XLSX_PHOTO_COL_WIDTH = 18;
+const XLSX_PHOTO_BLOCK_ROW_HEIGHT = 22;
+const XLSX_PHOTO_BLOCK_RIREKISHO_ROWS = { start: 1, end: 10 };
 
 function attachXlsxTagsSheet(workbook, tags) {
   const ws = workbook.addWorksheet('_meta_tags');
@@ -673,11 +676,11 @@ async function buildRirekishoXlsx() {
 
   ws.getColumn(1).width = 14;
   ws.getColumn(2).width = 22;
-  ws.getColumn(3).width = 38;
+  ws.getColumn(3).width = XLSX_PHOTO_COL_WIDTH;
   ws.getRow(1).height = 20;
-  for (let r = 2; r <= 6; r++) ws.getRow(r).height = 20;
-  ws.getRow(7).height = 22;
-  ws.getRow(8).height = 22;
+  for (let r = XLSX_PHOTO_BLOCK_RIREKISHO_ROWS.start; r <= XLSX_PHOTO_BLOCK_RIREKISHO_ROWS.end; r++) {
+    ws.getRow(r).height = XLSX_PHOTO_BLOCK_ROW_HEIGHT;
+  }
   const totalRows = rows.length;
   for (let r = 10; r <= totalRows; r++) {
     ws.getRow(r).height = sepRows.has(r) ? 20 : 22;
@@ -821,8 +824,10 @@ async function buildRirekishoPhotoXlsx() {
   ws.getCell('C1').alignment = { horizontal: 'center', vertical: 'middle' };
   ws.getColumn(1).width = 18;
   ws.getColumn(2).width = 24;
-  ws.getColumn(3).width = 18;
-  for (let r = 1; r <= 10; r++) ws.getRow(r).height = 22;
+  ws.getColumn(3).width = XLSX_PHOTO_COL_WIDTH;
+  for (let r = XLSX_PHOTO_BLOCK_RIREKISHO_ROWS.start; r <= XLSX_PHOTO_BLOCK_RIREKISHO_ROWS.end; r++) {
+    ws.getRow(r).height = XLSX_PHOTO_BLOCK_ROW_HEIGHT;
+  }
   for (let r = 11; r <= rows.length; r++) ws.getRow(r).height = 22;
   attachXlsxTagsSheet(wb, {
     'sheet.main': '履歴書',
@@ -908,8 +913,11 @@ async function buildRirekishoFullXlsx() {
   ws.getCell('C1').alignment = { horizontal: 'center', vertical: 'middle' };
   ws.getColumn(1).width = 20;
   ws.getColumn(2).width = 24;
-  ws.getColumn(3).width = 36;
+  ws.getColumn(3).width = XLSX_PHOTO_COL_WIDTH;
   for (let r = 1; r <= rows.length; r++) ws.getRow(r).height = r <= 11 ? 22 : (sepRows.has(r) ? 20 : 22);
+  for (let r = XLSX_PHOTO_BLOCK_RIREKISHO_ROWS.start; r <= XLSX_PHOTO_BLOCK_RIREKISHO_ROWS.end; r++) {
+    ws.getRow(r).height = XLSX_PHOTO_BLOCK_ROW_HEIGHT;
+  }
   attachXlsxTagsSheet(wb, {
     'sheet.main': '履歴書',
     'photo.anchor': 'C1',
@@ -978,8 +986,8 @@ async function buildShokumuPhotoXlsx() {
   ws.getCell('C1').alignment = { horizontal: 'center', vertical: 'middle' };
   ws.getColumn(1).width = 26;
   ws.getColumn(2).width = 42;
-  ws.getColumn(3).width = 18;
-  for (let r = 1; r <= 4; r++) ws.getRow(r).height = 28;
+  ws.getColumn(3).width = XLSX_PHOTO_COL_WIDTH;
+  for (let r = 1; r <= 4; r++) ws.getRow(r).height = XLSX_PHOTO_BLOCK_ROW_HEIGHT;
   for (let r = 7; r <= 13; r += 2) ws.getRow(r).height = 60;
   attachXlsxTagsSheet(wb, {
     'sheet.main': '職務経歴書',
