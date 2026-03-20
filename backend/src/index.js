@@ -22,6 +22,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
 ensureDirs();
+app.set('trust proxy', 1);
 
 app.use(
   cors({
@@ -47,6 +48,7 @@ app.use(
     saveUninitialized: false,
     cookie: {
       secure: config.nodeEnv === 'production',
+      sameSite: config.nodeEnv === 'production' ? 'none' : 'lax',
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     },
