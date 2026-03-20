@@ -124,8 +124,8 @@ export async function fillDocxTemplate(annotatedDocx, formData, avatarBase64 = n
     avatarBase64.startsWith('data:image');
 
   const photoImg = hasPhoto
-    ? `<img src="${avatarBase64.replace(/"/g, '&quot;')}" alt="" style="width:30mm;height:40mm;object-fit:cover;display:block;margin:0 auto;" />`
-    : '<span style="display:block;width:30mm;height:40mm;border:1px solid #333;background:#fafafa;font-size:9pt;color:#888;text-align:center;line-height:40mm;">写真</span>';
+    ? `<img src="${avatarBase64.replace(/"/g, '&quot;')}" alt="" style="max-width:28mm;max-height:36mm;object-fit:contain;display:block;margin:0 auto;" />`
+    : '<span style="display:block;width:28mm;height:36mm;border:1px solid #333;background:#fafafa;font-size:9pt;color:#888;text-align:center;line-height:36mm;">写真</span>';
 
   let filledBody = normalizedHtml
     .replace(/__PHOTO__/g, photoImg)

@@ -166,6 +166,7 @@ export async function xlsxToStyledHtml(buffer, avatarBase64 = null) {
   const sheetHtmls = [];
 
   for (const ws of wb.worksheets) {
+    let injectedPhotoFallback = false;
     const { masterOf, slaves } = parseMerges(ws);
     const maxRow = ws.rowCount;
     const maxCol = ws.columnCount;
@@ -202,12 +203,23 @@ export async function xlsxToStyledHtml(buffer, avatarBase64 = null) {
 
         let content = getCellText(cell);
 
-        if (content === '__PHOTO__') {
+        const normalizedContent = String(content ?? '').replace(/[\s\u3000\u00a0]/g, '');
+        const canUsePhotoFallback =
+          !injectedPhotoFallback &&
+          avatarBase64 &&
+          avatarBase64.startsWith('data:image') &&
+          (normalizedContent === '写真' ||
+            normalizedContent.includes('写真をはる位置') ||
+            normalizedContent.includes('写真を貼る位置') ||
+            normalizedContent.includes('写真貼付'));
+
+        if (content === '__PHOTO__' || canUsePhotoFallback) {
           if (avatarBase64 && avatarBase64.startsWith('data:image')) {
             content = `<img src="${avatarBase64.replace(/"/g, '&quot;')}" alt=""
-              style="width:30mm;height:40mm;object-fit:cover;display:block;margin:0 auto;">`;
+              style="max-width:28mm;max-height:36mm;object-fit:contain;display:block;margin:0 auto;">`;
+            injectedPhotoFallback = true;
           } else {
-            content = '<span style="display:block;min-height:40mm;border:1px solid #2c2c2c;background:#fafafa;font-size:9pt;color:#888;text-align:center;line-height:40mm;">写真</span>';
+            content = '<span style="display:block;min-height:36mm;border:1px solid #2c2c2c;background:#fafafa;font-size:9pt;color:#888;text-align:center;line-height:36mm;">写真</span>';
           }
         } else {
           content = esc(content).replace(/\n/g, '<br>');

@@ -65,6 +65,8 @@ const SIMPLE_FIELD_MAP = [
   { label: '写真貼付', id: '__photo__', replaceSelf: true },
 ];
 
+const WIDE_TEXT_FIELD_IDS = new Set(['motivation', 'self_pr', 'preferences']);
+
 function normalizeText(s) {
   return String(s ?? '').replace(/[\s\u3000\u00a0]/g, '');
 }
@@ -170,6 +172,15 @@ function fillSimpleFields(ws, formData) {
         // Mark cell for photo — replaced by xlsxToStyledHtml
         cell.value = '__PHOTO__';
       } else {
+        const value = formData[bestField.id] != null ? String(formData[bestField.id]) : '';
+        // Long free-text blocks in 履歴書 should go to the right-most content column.
+        if (WIDE_TEXT_FIELD_IDS.has(bestField.id) && maxCol >= 3) {
+          const target = ws.getCell(r, maxCol);
+          target.value = value;
+          if (!target.alignment) target.alignment = { vertical: 'top', wrapText: true };
+          else target.alignment = { ...target.alignment, vertical: 'top', wrapText: true };
+          continue;
+        }
         // Write into a nearby writable cell to the right.
         let target = null;
         for (let targetCol = c + 1; targetCol <= Math.min(maxCol, c + 4); targetCol++) {
@@ -181,7 +192,6 @@ function fillSimpleFields(ws, formData) {
           }
         }
         if (!target) continue;
-        const value = formData[bestField.id] != null ? String(formData[bestField.id]) : '';
         target.value = value;
       }
     }
@@ -262,20 +272,28 @@ function embedPhotoInWorksheet(workbook, ws, avatarBase64) {
   const anchor = findPhotoAnchor(ws);
   if (!anchor) return;
 
-  const { masterOf } = parseMerges(ws);
-  const span = masterOf.get(`${anchor.row},${anchor.col}`) || { rowspan: 4, colspan: 1 };
   const imageId = workbook.addImage({
     buffer: parsed.buffer,
     extension: parsed.extension,
   });
   ws.addImage(imageId, {
-    tl: { col: anchor.col - 1 + 0.03, row: anchor.row - 1 + 0.03 },
-    br: {
-      col: anchor.col - 1 + span.colspan - 0.03,
-      row: anchor.row - 1 + span.rowspan - 0.03,
-    },
+    tl: { col: anchor.col - 1 + 0.18, row: anchor.row - 1 + 0.2 },
+    ext: { width: 108, height: 144 },
     editAs: 'oneCell',
   });
+}
+
+function clearPhotoMarkers(ws) {
+  const maxRow = ws.rowCount;
+  const maxCol = ws.columnCount;
+  for (let r = 1; r <= maxRow; r++) {
+    for (let c = 1; c <= maxCol; c++) {
+      const cell = ws.getCell(r, c);
+      if (String(getCellText(cell)).trim() === '__PHOTO__') {
+        cell.value = '';
+      }
+    }
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -403,6 +421,7 @@ export async function fillXlsxTemplate(xlsxInput, formData, avatarBase64 = null)
     fillShokumuSectionRows(ws, formData);
     if (hasPhoto) {
       embedPhotoInWorksheet(workbook, ws, avatarBase64);
+      clearPhotoMarkers(ws);
     }
   }
 
