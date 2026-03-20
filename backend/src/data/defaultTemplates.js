@@ -596,6 +596,19 @@ const thinBorder = {
 const labelFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F7FA' } };
 const sectionFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEAEFF5' } };
 
+function attachXlsxTagsSheet(workbook, tags) {
+  const ws = workbook.addWorksheet('_meta_tags');
+  ws.state = 'veryHidden';
+  ws.getCell('A1').value = 'key';
+  ws.getCell('B1').value = 'value';
+  let row = 2;
+  for (const [key, value] of Object.entries(tags || {})) {
+    ws.getCell(`A${row}`).value = key;
+    ws.getCell(`B${row}`).value = String(value);
+    row++;
+  }
+}
+
 // ── Build XLSX: JIS 履歴書 (table layout, borders, merged 写真) ──
 async function buildRirekishoXlsx() {
   const wb = new ExcelJS.Workbook();
@@ -653,23 +666,47 @@ async function buildRirekishoXlsx() {
     });
   });
 
-  ws.mergeCells('C1:C8');
+  ws.mergeCells('C1:C6');
   ws.getCell('C1').value = '写真';
   ws.getCell('C1').alignment = { horizontal: 'center', vertical: 'middle' };
   ws.getCell('C1').border = thinBorder;
 
   ws.getColumn(1).width = 14;
   ws.getColumn(2).width = 22;
-  ws.getColumn(3).width = 48;
+  ws.getColumn(3).width = 38;
   ws.getRow(1).height = 20;
-  for (let r = 2; r <= 8; r++) ws.getRow(r).height = 22;
+  for (let r = 2; r <= 6; r++) ws.getRow(r).height = 20;
+  ws.getRow(7).height = 22;
+  ws.getRow(8).height = 22;
   const totalRows = rows.length;
   for (let r = 10; r <= totalRows; r++) {
     ws.getRow(r).height = sepRows.has(r) ? 20 : 22;
   }
 
-  const buf = await wb.xlsx.writeBuffer();
-  return Buffer.from(buf);
+  attachXlsxTagsSheet(wb, {
+    'sheet.main': '履歴書',
+    'photo.anchor': 'C1',
+    'field.name': 'B2',
+    'field.furigana': 'B3',
+    'field.birthdate': 'B4',
+    'field.gender': 'B5',
+    'field.current_address': 'B6',
+    'field.phone': 'B7',
+    'field.email': 'B8',
+    'section.education.start': '11',
+    'section.education.end': '14',
+    'section.experience.start': '17',
+    'section.experience.end': '28',
+    'section.licenses.start': '31',
+    'section.licenses.end': '34',
+    'section.yearCol': 'A',
+    'section.monthCol': 'B',
+    'section.contentCol': 'C',
+    'field.motivation': 'C35',
+    'field.self_pr': 'C36',
+    'field.preferences': 'C37',
+  });
+  return Buffer.from(await wb.xlsx.writeBuffer());
 }
 
 // ── 職務経歴書 XLSX: table with borders, section headers ──
@@ -715,8 +752,19 @@ async function buildShokumuXlsx() {
   ws.getColumn(2).width = 58;
   for (let r = 7; r <= 15; r += 2) ws.getRow(r).height = 60;
 
-  const buf = await wb.xlsx.writeBuffer();
-  return Buffer.from(buf);
+  attachXlsxTagsSheet(wb, {
+    'sheet.main': '職務経歴書',
+    'field.name': 'B1',
+    'field.email': 'B2',
+    'field.phone': 'B3',
+    'field.current_address': 'B4',
+    'field.self_intro': 'B7',
+    'field.experience': 'B9',
+    'field.education': 'B11',
+    'field.licenses': 'B13',
+    'field.hobbies_skills': 'B15',
+  });
+  return Buffer.from(await wb.xlsx.writeBuffer());
 }
 
 // ── 履歴書 Photo XLSX: 写真をはる位置、学歴・職歴・免許は多行対応 ──
@@ -773,9 +821,34 @@ async function buildRirekishoPhotoXlsx() {
   ws.getCell('C1').alignment = { horizontal: 'center', vertical: 'middle' };
   ws.getColumn(1).width = 18;
   ws.getColumn(2).width = 24;
-  ws.getColumn(3).width = 20;
+  ws.getColumn(3).width = 18;
   for (let r = 1; r <= 10; r++) ws.getRow(r).height = 22;
   for (let r = 11; r <= rows.length; r++) ws.getRow(r).height = 22;
+  attachXlsxTagsSheet(wb, {
+    'sheet.main': '履歴書',
+    'photo.anchor': 'C1',
+    'field.furigana': 'B1',
+    'field.name': 'B2',
+    'field.birthdate': 'B3',
+    'field.age': 'B4',
+    'field.gender': 'B5',
+    'field.nationality': 'B6',
+    'field.current_address': 'B7',
+    'field.phone': 'B8',
+    'field.email': 'B9',
+    'field.contact_address': 'B10',
+    'section.education.start': '13',
+    'section.education.end': '16',
+    'section.experience.start': '19',
+    'section.experience.end': '30',
+    'section.licenses.start': '33',
+    'section.licenses.end': '36',
+    'section.yearCol': 'A',
+    'section.monthCol': 'B',
+    'section.contentCol': 'C',
+    'field.motivation': 'C37',
+    'field.preferences': 'C38',
+  });
   return Buffer.from(await wb.xlsx.writeBuffer());
 }
 
@@ -830,13 +903,38 @@ async function buildRirekishoFullXlsx() {
       }
     });
   });
-  ws.mergeCells('C1:C11');
+  ws.mergeCells('C1:C7');
   ws.getCell('C1').value = '写真';
   ws.getCell('C1').alignment = { horizontal: 'center', vertical: 'middle' };
   ws.getColumn(1).width = 20;
   ws.getColumn(2).width = 24;
-  ws.getColumn(3).width = 44;
+  ws.getColumn(3).width = 36;
   for (let r = 1; r <= rows.length; r++) ws.getRow(r).height = r <= 11 ? 22 : (sepRows.has(r) ? 20 : 22);
+  attachXlsxTagsSheet(wb, {
+    'sheet.main': '履歴書',
+    'photo.anchor': 'C1',
+    'field.name': 'B2',
+    'field.furigana': 'B3',
+    'field.birthdate': 'B4',
+    'field.age': 'B5',
+    'field.gender': 'B6',
+    'field.nationality': 'B7',
+    'field.current_address': 'B8',
+    'field.phone': 'B9',
+    'field.email': 'B10',
+    'field.contact_address': 'B11',
+    'section.education.start': '14',
+    'section.education.end': '17',
+    'section.experience.start': '20',
+    'section.experience.end': '31',
+    'section.licenses.start': '34',
+    'section.licenses.end': '37',
+    'section.yearCol': 'A',
+    'section.monthCol': 'B',
+    'section.contentCol': 'C',
+    'field.motivation': 'C38',
+    'field.preferences': 'C39',
+  });
   return Buffer.from(await wb.xlsx.writeBuffer());
 }
 
@@ -880,9 +978,22 @@ async function buildShokumuPhotoXlsx() {
   ws.getCell('C1').alignment = { horizontal: 'center', vertical: 'middle' };
   ws.getColumn(1).width = 26;
   ws.getColumn(2).width = 42;
-  ws.getColumn(3).width = 14;
+  ws.getColumn(3).width = 18;
   for (let r = 1; r <= 4; r++) ws.getRow(r).height = 28;
   for (let r = 7; r <= 13; r += 2) ws.getRow(r).height = 60;
+  attachXlsxTagsSheet(wb, {
+    'sheet.main': '職務経歴書',
+    'photo.anchor': 'C1',
+    'field.name': 'B1',
+    'field.email': 'B2',
+    'field.phone': 'B3',
+    'field.current_address': 'B4',
+    'field.self_intro': 'B7',
+    'field.experience': 'B9',
+    'field.education': 'B11',
+    'field.licenses': 'B13',
+    'field.hobbies_skills': 'B15',
+  });
   return Buffer.from(await wb.xlsx.writeBuffer());
 }
 

@@ -71,6 +71,25 @@ function normalizeText(s) {
   return String(s ?? '').replace(/[\s\u3000\u00a0]/g, '');
 }
 
+function colLetterToNumber(letter) {
+  return String(letter || '')
+    .toUpperCase()
+    .split('')
+    .reduce((acc, ch) => acc * 26 + (ch.charCodeAt(0) - 64), 0);
+}
+
+function readTags(workbook) {
+  const ws = workbook.getWorksheet('_meta_tags');
+  if (!ws) return null;
+  const tags = {};
+  for (let r = 2; r <= ws.rowCount; r++) {
+    const key = String(ws.getCell(r, 1).value || '').trim();
+    const val = String(ws.getCell(r, 2).value || '').trim();
+    if (key) tags[key] = val;
+  }
+  return Object.keys(tags).length ? tags : null;
+}
+
 function parseAvatarDataUrl(avatarBase64) {
   if (!avatarBase64 || typeof avatarBase64 !== 'string') return null;
   const match = avatarBase64.match(/^data:image\/(png|jpe?g|gif|webp);base64,(.+)$/i);
@@ -234,7 +253,7 @@ function fillShokumuSectionRows(ws, formData) {
         break;
       }
     }
-    if (!targetCell) targetCell = ws.getCell(targetRow, Math.min(2, maxCol));
+    if (!targetCell) targetCell = ws.getCell(targetRow, Math.min(maxCol, 2));
     targetCell.value = value;
     if (!targetCell.alignment) {
       targetCell.alignment = { vertical: 'top', wrapText: true };
@@ -265,11 +284,17 @@ function findPhotoAnchor(ws) {
   return null;
 }
 
-function embedPhotoInWorksheet(workbook, ws, avatarBase64) {
+function embedPhotoInWorksheet(workbook, ws, avatarBase64, forcedAnchor = null) {
   const parsed = parseAvatarDataUrl(avatarBase64);
   if (!parsed) return;
 
-  const anchor = findPhotoAnchor(ws);
+  const anchor = forcedAnchor
+    ? (() => {
+        const m = String(forcedAnchor).match(/^([A-Z]+)(\d+)$/i);
+        if (!m) return null;
+        return { col: colLetterToNumber(m[1]), row: parseInt(m[2], 10) };
+      })()
+    : findPhotoAnchor(ws);
   if (!anchor) return;
 
   const imageId = workbook.addImage({
@@ -294,6 +319,87 @@ function clearPhotoMarkers(ws) {
       }
     }
   }
+}
+
+function fillByTags(workbook, ws, tags, formData, hasPhoto, avatarBase64) {
+  if (!tags) return false;
+  const mainSheetName = tags['sheet.main'];
+  if (mainSheetName && ws.name !== mainSheetName) return false;
+
+  let used = false;
+  for (const [k, address] of Object.entries(tags)) {
+    if (!k.startsWith('field.') || !address) continue;
+    const field = k.replace('field.', '');
+    const value = formData?.[field];
+    if (value == null) continue;
+    const cell = ws.getCell(address);
+    cell.value = String(value);
+    if (!cell.alignment) cell.alignment = { vertical: 'top', wrapText: true };
+    else cell.alignment = { ...cell.alignment, vertical: 'top', wrapText: true };
+    used = true;
+  }
+
+  const startEdu = parseInt(tags['section.education.start'] || '', 10);
+  const endEdu = parseInt(tags['section.education.end'] || '', 10);
+  const startExp = parseInt(tags['section.experience.start'] || '', 10);
+  const endExp = parseInt(tags['section.experience.end'] || '', 10);
+  const startLic = parseInt(tags['section.licenses.start'] || '', 10);
+  const endLic = parseInt(tags['section.licenses.end'] || '', 10);
+  const yCol = colLetterToNumber(tags['section.yearCol'] || '');
+  const mCol = colLetterToNumber(tags['section.monthCol'] || '');
+  const cCol = colLetterToNumber(tags['section.contentCol'] || '');
+
+  const fillRange = (start, end, entries) => {
+    if (!start || !end || !yCol || !mCol || !cCol) return;
+    const rows = [];
+    for (let r = start; r <= end; r++) rows.push(r);
+    const normalized = Array.isArray(entries)
+      ? entries.filter((e) => e && (e.year || e.month || e.description))
+      : [];
+    if (!normalized.length) return;
+    if (normalized.length > rows.length) {
+      const need = normalized.length - rows.length;
+      const insertAt = end + 1;
+      for (let k = 0; k < need; k++) {
+        ws.spliceRows(insertAt, 0, []);
+        const srcRowIdx = rows[rows.length - 1] + k;
+        const dstRowIdx = insertAt + k;
+        const srcRow = ws.getRow(srcRowIdx);
+        const dstRow = ws.getRow(dstRowIdx);
+        dstRow.height = srcRow.height;
+        for (let c = 1; c <= ws.columnCount; c++) {
+          const src = ws.getCell(srcRowIdx, c);
+          const dst = ws.getCell(dstRowIdx, c);
+          dst.style = JSON.parse(JSON.stringify(src.style || {}));
+          dst.border = src.border ? JSON.parse(JSON.stringify(src.border)) : dst.border;
+          dst.fill = src.fill ? JSON.parse(JSON.stringify(src.fill)) : dst.fill;
+          dst.font = src.font ? JSON.parse(JSON.stringify(src.font)) : dst.font;
+          dst.alignment = src.alignment ? JSON.parse(JSON.stringify(src.alignment)) : dst.alignment;
+          dst.numFmt = src.numFmt || dst.numFmt;
+          dst.value = '';
+        }
+      }
+      for (let k = 0; k < need; k++) rows.push(insertAt + k);
+    }
+    for (let i = 0; i < normalized.length && i < rows.length; i++) {
+      const row = rows[i];
+      ws.getCell(row, yCol).value = normalized[i].year ? String(normalized[i].year) : '';
+      ws.getCell(row, mCol).value = normalized[i].month ? String(normalized[i].month) : '';
+      ws.getCell(row, cCol).value = normalized[i].description ? String(normalized[i].description) : '';
+    }
+    used = true;
+  };
+
+  fillRange(startEdu, endEdu, formData?.educationEntries);
+  fillRange(startExp, endExp, formData?.experienceEntries);
+  fillRange(startLic, endLic, formData?.licensesEntries);
+
+  if (hasPhoto && tags['photo.anchor']) {
+    embedPhotoInWorksheet(workbook, ws, avatarBase64, tags['photo.anchor']);
+    used = true;
+  }
+
+  return used;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -358,32 +464,82 @@ function buildSectionMap(ws, yearCol, monthCol, contentCol) {
  * For each section in the map, fill blank data rows with entries from formData.
  */
 function fillSectionRows(ws, yearCol, monthCol, contentCol, formData) {
-  const mapItems = buildSectionMap(ws, yearCol, monthCol, contentCol);
+  const maxRow = ws.rowCount;
+  const separators = [];
 
-  let currentSection = null;
-  let entryIdx = 0;
-
-  for (const item of mapItems) {
-    if (item.type === 'separator') {
-      currentSection = item.sectionType;
-      entryIdx = 0;
-      continue;
+  for (let r = 1; r <= maxRow; r++) {
+    const yearNorm = normalizeText(getCellText(ws.getCell(r, yearCol)));
+    const monthNorm = normalizeText(getCellText(ws.getCell(r, monthCol)));
+    const contentNorm = normalizeText(getCellText(ws.getCell(r, contentCol)));
+    if (!yearNorm && !monthNorm && SECTION_KEYWORDS[contentNorm]) {
+      separators.push({ row: r, sectionType: SECTION_KEYWORDS[contentNorm] });
     }
-    if (item.type !== 'data' || currentSection === null) continue;
+  }
 
-    const entries = formData[`${currentSection}Entries`];
-    if (!Array.isArray(entries) || entryIdx >= entries.length) continue;
+  for (let i = 0; i < separators.length; i++) {
+    const sep = separators[i];
+    const nextSepRow = i + 1 < separators.length ? separators[i + 1].row : maxRow + 1;
+    let endRow = nextSepRow - 1;
+    // Stop at "以上" row inside current section.
+    for (let r = sep.row + 1; r < nextSepRow; r++) {
+      const yearNorm = normalizeText(getCellText(ws.getCell(r, yearCol)));
+      if (yearNorm === '以上') {
+        endRow = r - 1;
+        break;
+      }
+    }
+    if (endRow < sep.row + 1) continue;
 
-    const entry = entries[entryIdx++];
-    if (!entry) continue;
+    const dataRows = [];
+    for (let r = sep.row + 1; r <= endRow; r++) dataRows.push(r);
+    if (!dataRows.length) continue;
 
-    const yearCell = ws.getCell(item.row, yearCol);
-    const monthCell = ws.getCell(item.row, monthCol);
-    const contentCell = ws.getCell(item.row, contentCol);
+    const entries = formData[`${sep.sectionType}Entries`];
+    const normalizedEntries = Array.isArray(entries)
+      ? entries.filter((e) => e && (e.year || e.month || e.description))
+      : [];
+    if (!normalizedEntries.length) continue;
 
-    if (entry.year) yearCell.value = String(entry.year);
-    if (entry.month) monthCell.value = String(entry.month);
-    if (entry.description) contentCell.value = String(entry.description);
+    // Auto-expand rows if user provided more entries than template has.
+    if (normalizedEntries.length > dataRows.length) {
+      const need = normalizedEntries.length - dataRows.length;
+      const insertAt = endRow + 1;
+      for (let k = 0; k < need; k++) {
+        ws.spliceRows(insertAt, 0, []);
+        const sourceRowIndex = dataRows[dataRows.length - 1] + k;
+        const sourceRow = ws.getRow(sourceRowIndex);
+        const targetRow = ws.getRow(insertAt + k);
+        targetRow.height = sourceRow.height;
+        for (let c = 1; c <= ws.columnCount; c++) {
+          const src = ws.getCell(sourceRowIndex, c);
+          const dst = ws.getCell(insertAt + k, c);
+          dst.style = JSON.parse(JSON.stringify(src.style || {}));
+          dst.border = src.border ? JSON.parse(JSON.stringify(src.border)) : dst.border;
+          dst.fill = src.fill ? JSON.parse(JSON.stringify(src.fill)) : dst.fill;
+          dst.font = src.font ? JSON.parse(JSON.stringify(src.font)) : dst.font;
+          dst.alignment = src.alignment ? JSON.parse(JSON.stringify(src.alignment)) : dst.alignment;
+          dst.numFmt = src.numFmt || dst.numFmt;
+          dst.value = '';
+        }
+      }
+      for (let k = 0; k < need; k++) dataRows.push(insertAt + k);
+    }
+
+    for (let idx = 0; idx < normalizedEntries.length && idx < dataRows.length; idx++) {
+      const row = dataRows[idx];
+      const entry = normalizedEntries[idx];
+      const yearCell = ws.getCell(row, yearCol);
+      const monthCell = ws.getCell(row, monthCol);
+      const contentCell = ws.getCell(row, contentCol);
+      yearCell.value = entry.year ? String(entry.year) : '';
+      monthCell.value = entry.month ? String(entry.month) : '';
+      contentCell.value = entry.description ? String(entry.description) : '';
+      if (!contentCell.alignment) {
+        contentCell.alignment = { vertical: 'top', wrapText: true };
+      } else {
+        contentCell.alignment = { ...contentCell.alignment, vertical: 'top', wrapText: true };
+      }
+    }
   }
 }
 
@@ -403,6 +559,7 @@ export async function fillXlsxTemplate(xlsxInput, formData, avatarBase64 = null)
 
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(inputBuffer);
+  const tags = readTags(workbook);
 
   const hasPhoto =
     !!avatarBase64 &&
@@ -410,6 +567,9 @@ export async function fillXlsxTemplate(xlsxInput, formData, avatarBase64 = null)
     avatarBase64.startsWith('data:image');
 
   for (const ws of workbook.worksheets) {
+    if (ws.name === '_meta_tags') continue;
+    const usedTags = fillByTags(workbook, ws, tags, formData, hasPhoto, avatarBase64);
+    if (usedTags) continue;
     // A) Simple label → adjacent cell fields (name, phone, address, etc.)
     fillSimpleFields(ws, formData);
 
@@ -425,11 +585,15 @@ export async function fillXlsxTemplate(xlsxInput, formData, avatarBase64 = null)
     }
   }
 
-  // ── XLSX buffer for direct download (all styles preserved by ExcelJS) ─────
-  const xlsxBuffer = Buffer.from(await workbook.xlsx.writeBuffer());
+  // Use a snapshot BEFORE removing markers for HTML/PDF,
+  // then clean markers for final XLSX download/email.
+  const htmlSourceBuffer = Buffer.from(await workbook.xlsx.writeBuffer());
+  const html = await xlsxToStyledHtml(htmlSourceBuffer, hasPhoto ? avatarBase64 : null);
 
-  // ── Styled HTML for PDF via Puppeteer ────────────────────────────────────
-  const html = await xlsxToStyledHtml(xlsxBuffer, hasPhoto ? avatarBase64 : null);
+  if (hasPhoto) {
+    for (const ws of workbook.worksheets) clearPhotoMarkers(ws);
+  }
+  const xlsxBuffer = Buffer.from(await workbook.xlsx.writeBuffer());
 
   return { xlsxBuffer, html };
 }
