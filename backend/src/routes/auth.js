@@ -19,9 +19,36 @@ router.get(
 
 router.get(
   '/google/callback',
-  passport.authenticate('google', { session: true, failureRedirect: `${config.frontendUrl}/?error=auth` }),
-  (req, res) => {
-    res.redirect(`${config.frontendUrl}/dashboard`);
+  (req, res, next) => {
+    passport.authenticate('google', { session: true }, (err, user, info) => {
+      if (err || !user) {
+        const ua = req.get('user-agent') || 'unknown';
+        const ip = req.ip || req.connection?.remoteAddress || 'unknown';
+        console.error('[OAuth callback] Authentication failed', {
+          error: err?.message || null,
+          errorCode: err?.code || null,
+          info,
+          ip,
+          userAgent: ua,
+        });
+        return res.redirect(`${config.frontendUrl}/?error=auth`);
+      }
+
+      req.logIn(user, (loginErr) => {
+        if (loginErr) {
+          const ua = req.get('user-agent') || 'unknown';
+          const ip = req.ip || req.connection?.remoteAddress || 'unknown';
+          console.error('[OAuth callback] Session login failed', {
+            error: loginErr?.message || null,
+            errorCode: loginErr?.code || null,
+            ip,
+            userAgent: ua,
+          });
+          return next(loginErr);
+        }
+        return res.redirect(`${config.frontendUrl}/dashboard`);
+      });
+    })(req, res, next);
   }
 );
 
