@@ -378,9 +378,9 @@ function buildRirekishoDocx() {
   return buildMinimalDocx(docXml);
 }
 
-// ── 履歴書 Photo style: 写真をはる位置 with instructions (like reference image) ──
+// ── 履歴書 Photo style ──
 function buildRirekishoPhotoDocx() {
-  const photoCell = `<w:tc><w:tcPr><w:tcW w:w="1400" w:type="dxa"/>${tcBorder}<w:vMerge w:val="restart"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="18"/></w:rPr><w:t>写真をはる位置</w:t></w:r></w:p><w:p><w:r><w:rPr><w:sz w:val="14"/></w:rPr><w:t>写真は貼る必要が</w:t></w:r></w:p><w:p><w:r><w:rPr><w:sz w:val="14"/></w:rPr><w:t>ある場合のみ</w:t></w:r></w:p><w:p><w:r><w:rPr><w:sz w:val="12"/></w:rPr><w:t>1.縦40mm×横30mm</w:t></w:r></w:p><w:p><w:r><w:rPr><w:sz w:val="12"/></w:rPr><w:t>2.上半身・無帽</w:t></w:r></w:p><w:p><w:r><w:rPr><w:sz w:val="12"/></w:rPr><w:t>3.裏面に氏名</w:t></w:r></w:p><w:p><w:r><w:t>__PHOTO__</w:t></w:r></w:p></w:tc>`;
+  const photoCell = `<w:tc><w:tcPr><w:tcW w:w="1400" w:type="dxa"/>${tcBorder}<w:vMerge w:val="restart"/></w:tcPr><w:p><w:r><w:t>__PHOTO__</w:t></w:r></w:p></w:tc>`;
   const photoMerge = `<w:tc><w:tcPr><w:tcW w:w="1400"/>${tcBorder}<w:vMerge/></w:tcPr><w:p/></w:tc>`;
   const docXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
@@ -509,7 +509,7 @@ function buildShokumuPhotoDocx() {
     <w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="36"/></w:rPr><w:t>職務経歴書</w:t></w:r></w:p>
     <w:tbl>
       <w:tblPr><w:tblW w:w="5000" w:type="pct"/><w:tblBorders><w:top w:val="single" w:sz="6"/><w:left w:val="single" w:sz="6"/><w:bottom w:val="single" w:sz="6"/><w:right w:val="single" w:sz="6"/><w:insideH w:val="single" w:sz="4"/><w:insideV w:val="single" w:sz="4"/></w:tblBorders></w:tblPr>
-      <w:tr><w:tc><w:tcPr><w:tcW w:w="1200" w:type="dxa"/>${tcBorder}</w:tcPr><w:p><w:r><w:t>氏名</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="2600" w:type="dxa"/>${tcBorder}</w:tcPr><w:p><w:r><w:t>{name}</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1200" w:type="dxa"/>${tcBorder}<w:vMerge w:val="restart"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="16"/></w:rPr><w:t>写真</w:t></w:r></w:p><w:p><w:r><w:t>__PHOTO__</w:t></w:r></w:p></w:tc></w:tr>
+      <w:tr><w:tc><w:tcPr><w:tcW w:w="1200" w:type="dxa"/>${tcBorder}</w:tcPr><w:p><w:r><w:t>氏名</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="2600" w:type="dxa"/>${tcBorder}</w:tcPr><w:p><w:r><w:t>{name}</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1200" w:type="dxa"/>${tcBorder}<w:vMerge w:val="restart"/></w:tcPr><w:p><w:r><w:t>__PHOTO__</w:t></w:r></w:p></w:tc></w:tr>
       <w:tr>${tc('メールアドレス', 1200)}${tc('{email}', 2600)}${tc('', 1200, '<w:vMerge/>')}</w:tr>
       <w:tr>${tc('電話', 1200)}${tc('{phone}', 2600)}${tc('', 1200, '<w:vMerge/>')}</w:tr>
       <w:tr>${tc('現住所', 1200)}${tc('{current_address}', 2600)}${tc('', 1200, '<w:vMerge/>')}</w:tr>

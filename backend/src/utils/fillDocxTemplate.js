@@ -125,7 +125,7 @@ export async function fillDocxTemplate(annotatedDocx, formData, avatarBase64 = n
 
   const photoImg = hasPhoto
     ? `<img src="${avatarBase64.replace(/"/g, '&quot;')}" alt="" style="max-width:28mm;max-height:36mm;object-fit:contain;display:block;margin:0 auto;" />`
-    : '<span style="display:block;width:28mm;height:36mm;border:1px solid #333;background:#fafafa;font-size:9pt;color:#888;text-align:center;line-height:36mm;">写真</span>';
+    : '<span style="display:block;width:28mm;height:36mm;"></span>';
 
   let filledBody = normalizedHtml
     .replace(/__PHOTO__/g, photoImg)
@@ -153,9 +153,8 @@ export async function fillDocxTemplate(annotatedDocx, formData, avatarBase64 = n
     width: 210mm;
     min-height: 297mm;
   }
-  table { border-collapse: collapse; width: 100%; margin-bottom: 0; border: 1px solid #2c2c2c; }
+  table { border-collapse: collapse; width: 100%; margin-bottom: 0; }
   td, th {
-    border: 1px solid #2c2c2c;
     padding: 5px 8px;
     vertical-align: top;
     white-space: pre-wrap;

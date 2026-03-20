@@ -45,7 +45,7 @@ router.get('/:id', requireAuth, async (req, res, next) => {
     width: 210mm; min-height: 297mm;
   }
   table { border-collapse: collapse; width: 100%; margin-bottom: 4px; }
-  td, th { border: 1px solid #333; padding: 3px 6px; vertical-align: top; }
+  td, th { padding: 3px 6px; vertical-align: top; }
   p { margin-bottom: 2px; line-height: 1.4; }
 </style>
 </head>
