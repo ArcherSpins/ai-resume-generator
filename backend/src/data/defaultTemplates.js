@@ -881,6 +881,8 @@ async function buildShokumuPhotoXlsx() {
   ws.getColumn(1).width = 26;
   ws.getColumn(2).width = 42;
   ws.getColumn(3).width = 14;
+  for (let r = 1; r <= 4; r++) ws.getRow(r).height = 28;
+  for (let r = 7; r <= 13; r += 2) ws.getRow(r).height = 60;
   return Buffer.from(await wb.xlsx.writeBuffer());
 }
 

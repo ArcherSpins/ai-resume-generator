@@ -188,6 +188,52 @@ function fillSimpleFields(ws, formData) {
   }
 }
 
+function fillShokumuSectionRows(ws, formData) {
+  const sectionMap = [
+    { keys: ['キャリアサマリー', '自己紹介'], valueKey: 'self_intro' },
+    { keys: ['職務経歴'], valueKey: 'experience' },
+    { keys: ['学歴'], valueKey: 'education' },
+    { keys: ['保有資格', 'スキル'], valueKey: 'licenses' },
+    { keys: ['趣味', '特技'], valueKey: 'hobbies_skills' },
+  ];
+  const maxRow = ws.rowCount;
+  const maxCol = ws.columnCount;
+
+  for (let r = 1; r <= maxRow; r++) {
+    const rowTexts = [];
+    for (let c = 1; c <= maxCol; c++) {
+      rowTexts.push(normalizeText(getCellText(ws.getCell(r, c))));
+    }
+    const rowJoined = rowTexts.join('|');
+    if (!rowJoined) continue;
+
+    const section = sectionMap.find((s) => s.keys.every((k) => rowJoined.includes(normalizeText(k))));
+    if (!section) continue;
+
+    const rawValue = formData?.[section.valueKey];
+    const value = rawValue == null ? '' : String(rawValue);
+    if (!value.trim()) continue;
+
+    const targetRow = Math.min(maxRow, r + 1);
+    let targetCell = null;
+    for (let c = 2; c <= maxCol; c++) {
+      const probe = ws.getCell(targetRow, c);
+      const probeNorm = normalizeText(getCellText(probe));
+      if (!ALL_LABELS.has(probeNorm)) {
+        targetCell = probe;
+        break;
+      }
+    }
+    if (!targetCell) targetCell = ws.getCell(targetRow, Math.min(2, maxCol));
+    targetCell.value = value;
+    if (!targetCell.alignment) {
+      targetCell.alignment = { vertical: 'top', wrapText: true };
+    } else {
+      targetCell.alignment = { ...targetCell.alignment, vertical: 'top', wrapText: true };
+    }
+  }
+}
+
 function findPhotoAnchor(ws) {
   const maxRow = ws.rowCount;
   const maxCol = ws.columnCount;
@@ -222,8 +268,6 @@ function embedPhotoInWorksheet(workbook, ws, avatarBase64) {
     buffer: parsed.buffer,
     extension: parsed.extension,
   });
-
-  ws.getCell(anchor.row, anchor.col).value = '';
   ws.addImage(imageId, {
     tl: { col: anchor.col - 1 + 0.03, row: anchor.row - 1 + 0.03 },
     br: {
@@ -356,6 +400,7 @@ export async function fillXlsxTemplate(xlsxInput, formData, avatarBase64 = null)
     if (struct) {
       fillSectionRows(ws, struct.yearCol, struct.monthCol, struct.contentCol, formData);
     }
+    fillShokumuSectionRows(ws, formData);
     if (hasPhoto) {
       embedPhotoInWorksheet(workbook, ws, avatarBase64);
     }
