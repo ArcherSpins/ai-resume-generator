@@ -25,6 +25,18 @@ function colLetterToNum(col) {
   return n;
 }
 
+function readTags(workbook) {
+  const ws = workbook.getWorksheet('_meta_tags');
+  if (!ws) return null;
+  const tags = {};
+  for (let r = 2; r <= ws.rowCount; r++) {
+    const key = String(ws.getCell(r, 1).value || '').trim();
+    const val = String(ws.getCell(r, 2).value || '').trim();
+    if (key) tags[key] = val;
+  }
+  return Object.keys(tags).length ? tags : null;
+}
+
 /**
  * Build a lookup of merged-cell info from an ExcelJS worksheet.
  * masterOf : Map<'r,c', {rowspan, colspan}>  — for the top-left cell of each merge
@@ -162,15 +174,27 @@ function getCellText(cell) {
 export async function xlsxToStyledHtml(buffer, avatarBase64 = null) {
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.load(buffer);
+  const tags = readTags(wb);
 
   const sheetHtmls = [];
 
   for (const ws of wb.worksheets) {
     let injectedPhotoFallback = false;
+    if (ws.name === '_meta_tags') continue;
     const { masterOf, slaves } = parseMerges(ws);
     const maxRow = ws.rowCount;
     const maxCol = ws.columnCount;
     if (maxRow === 0 || maxCol === 0) continue;
+    const mainSheet = tags?.['sheet.main'];
+    const photoAnchor = tags?.['photo.anchor'];
+    const forcedPhotoCell =
+      mainSheet && photoAnchor && ws.name === mainSheet
+        ? (() => {
+            const m = String(photoAnchor).match(/^([A-Z]+)(\d+)$/i);
+            if (!m) return null;
+            return `${parseInt(m[2], 10)},${colLetterToNum(m[1])}`;
+          })()
+        : null;
 
     // ── Table with column widths and explicit grid (XLSX-style borders) ────────
     let tbl = '<table style="border-collapse:collapse;table-layout:fixed;border:1px solid #333;">';
@@ -213,13 +237,13 @@ export async function xlsxToStyledHtml(buffer, avatarBase64 = null) {
             normalizedContent.includes('写真を貼る位置') ||
             normalizedContent.includes('写真貼付'));
 
-        if (content === '__PHOTO__' || canUsePhotoFallback) {
+        if (content === '__PHOTO__' || canUsePhotoFallback || (forcedPhotoCell && forcedPhotoCell === key)) {
           if (avatarBase64 && avatarBase64.startsWith('data:image')) {
             content = `<img src="${avatarBase64.replace(/"/g, '&quot;')}" alt=""
               style="max-width:28mm;max-height:36mm;object-fit:contain;display:block;margin:0 auto;">`;
             injectedPhotoFallback = true;
           } else {
-            content = '<span style="display:block;min-height:36mm;border:1px solid #2c2c2c;background:#fafafa;font-size:9pt;color:#888;text-align:center;line-height:36mm;">写真</span>';
+            content = '';
           }
         } else {
           content = esc(content).replace(/\n/g, '<br>');

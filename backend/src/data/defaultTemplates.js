@@ -622,7 +622,7 @@ async function buildRirekishoXlsx() {
   const expRows = Array(12).fill(['', '', '']);
   const licRows = [['', '', ''], ['', '', ''], ['', '', ''], ['', '', '']];
   const rows = [
-    ['日付', '　　　年　　　月　　　日', '写真'],
+    ['日付', '　　　年　　　月　　　日', ''],
     ['氏名', '', ''],
     ['ふりがな', '', ''],
     ['生年月日', '', ''],
@@ -670,7 +670,7 @@ async function buildRirekishoXlsx() {
   });
 
   ws.mergeCells('C1:C6');
-  ws.getCell('C1').value = '写真';
+  ws.getCell('C1').value = '';
   ws.getCell('C1').alignment = { horizontal: 'center', vertical: 'middle' };
   ws.getCell('C1').border = thinBorder;
 
@@ -778,10 +778,10 @@ async function buildRirekishoPhotoXlsx() {
   const expRows = Array(12).fill(['', '', '']);
   const licRows = Array(4).fill(['', '', '']);
   const rows = [
-    ['ふりがな', '', '写真をはる位置'],
-    ['氏名', '', '1.縦40mm×横30mm'],
-    ['生年月日', '', '2.上半身・無帽'],
-    ['（年齢）', '', '3.裏面に氏名'],
+    ['ふりがな', '', ''],
+    ['氏名', '', ''],
+    ['生年月日', '', ''],
+    ['（年齢）', '', ''],
     ['性別', '', ''],
     ['国籍', '', ''],
     ['現住所', '', ''],
@@ -865,7 +865,7 @@ async function buildRirekishoFullXlsx() {
   const expRows = Array(12).fill(['', '', '']);
   const licRows = Array(4).fill(['', '', '']);
   const rows = [
-    ['日付', '　　　年　　　月　　　日現在', '写真'],
+    ['日付', '　　　年　　　月　　　日現在', ''],
     ['氏名', '', ''],
     ['ふりがな', '', ''],
     ['生年月日', '', ''],
@@ -909,7 +909,7 @@ async function buildRirekishoFullXlsx() {
     });
   });
   ws.mergeCells('C1:C7');
-  ws.getCell('C1').value = '写真';
+  ws.getCell('C1').value = '';
   ws.getCell('C1').alignment = { horizontal: 'center', vertical: 'middle' };
   ws.getColumn(1).width = 20;
   ws.getColumn(2).width = 24;
@@ -952,7 +952,7 @@ async function buildShokumuPhotoXlsx() {
   const ws = wb.addWorksheet('職務経歴書', { views: [{ showGridLines: true }] });
   const headerBg = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8E8E8' } };
   const rows = [
-    ['氏名', '', '写真'],
+    ['氏名', '', ''],
     ['メールアドレス', '', ''],
     ['電話', '', ''],
     ['現住所', '', ''],
@@ -982,7 +982,7 @@ async function buildShokumuPhotoXlsx() {
     });
   });
   ws.mergeCells('C1:C4');
-  ws.getCell('C1').value = '写真';
+  ws.getCell('C1').value = '';
   ws.getCell('C1').alignment = { horizontal: 'center', vertical: 'middle' };
   ws.getColumn(1).width = 26;
   ws.getColumn(2).width = 42;
