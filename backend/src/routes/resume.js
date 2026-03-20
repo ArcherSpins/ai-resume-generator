@@ -7,7 +7,7 @@ import { fillXlsxTemplate } from '../utils/fillXlsxTemplate.js';
 import { fillAnnotatedTemplate } from '../utils/fillAnnotatedTemplate.js';
 import { generateJapaneseResumeHtml } from '../utils/generateJapaneseResumeHtml.js';
 import { htmlToPdfBuffer, saveBuffer, getRelativePath } from '../services/pdfService.js';
-import { sendResumeEmail, sendResumeEmailBuffer } from '../services/emailService.js';
+import { sendResumeEmailBuffer } from '../services/emailService.js';
 import { prisma } from '../utils/prisma.js';
 import {
   isS3Configured,
@@ -238,14 +238,18 @@ router.post('/', requireAuth, async (req, res, next) => {
     });
 
     try {
-      const attachPath = generationMode !== 'voice' && nativeBuffer && nativeExt
-        ? generatedFiles[nativeExt]
-        : generatedFiles.pdf;
       const attachName = generationMode !== 'voice' && nativeBuffer && nativeExt
         ? `${base}.${nativeExt}`
         : `${base}.pdf`;
-      // Primary path: send exactly the same stored file as in history.
-      await sendResumeEmail(req.user.email, attachPath, attachName, req.user.name);
+      const attachBuffer = generationMode !== 'voice' && nativeBuffer && nativeExt
+        ? nativeBuffer
+        : pdfBuffer;
+      const attachMime = generationMode !== 'voice' && nativeBuffer && nativeExt
+        ? (nativeExt === 'xlsx'
+            ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        : 'application/pdf';
+      await sendResumeEmailBuffer(req.user.email, attachBuffer, attachName, req.user.name, attachMime);
     } catch (emailErr) {
       // Fallback: if storage read fails, still send in-memory generated file.
       try {
@@ -255,7 +259,12 @@ router.post('/', requireAuth, async (req, res, next) => {
         const attachBuffer = generationMode !== 'voice' && nativeBuffer && nativeExt
           ? nativeBuffer
           : pdfBuffer;
-        await sendResumeEmailBuffer(req.user.email, attachBuffer, attachName, req.user.name);
+        const attachMime = generationMode !== 'voice' && nativeBuffer && nativeExt
+          ? (nativeExt === 'xlsx'
+              ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+              : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+          : 'application/pdf';
+        await sendResumeEmailBuffer(req.user.email, attachBuffer, attachName, req.user.name, attachMime);
       } catch (fallbackErr) {
         console.error('Email send failed:', fallbackErr);
       }
