@@ -1,0 +1,19 @@
+# Node
+node_modules/
+
+# Build output
+dist/
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# Coverage / cache
+coverage/
+.cache/
+

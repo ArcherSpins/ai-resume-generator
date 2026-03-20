@@ -1,0 +1,43 @@
+{
+  "name": "ai-resume-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "format": "prettier --write \"src/**/*.{js,json}\""
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.700.0",
+    "@aws-sdk/lib-storage": "^3.700.0",
+    "@aws-sdk/s3-request-presigner": "^3.700.0",
+    "@prisma/client": "^5.22.0",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "express-session": "^1.18.0",
+    "mammoth": "^1.8.0",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^6.9.16",
+    "openai": "^4.73.0",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "docxtemplater": "^3.50.0",
+    "exceljs": "^4.4.0",
+    "xlsx": "^0.18.5",
+    "pdf-parse": "^1.1.1",
+    "pizzip": "^3.1.4",
+    "puppeteer": "^23.6.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7",
+    "prettier": "^3.4.2",
+    "prisma": "^5.22.0"
+  }
+}
