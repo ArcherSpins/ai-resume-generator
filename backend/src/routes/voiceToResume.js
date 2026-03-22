@@ -6,6 +6,12 @@ import { requireAuth } from '../middleware/auth.js';
 import { getSchema } from '../data/templateSchemas.js';
 import { TEMPLATE_IDS } from '../data/templateList.js';
 import { generateJapaneseResumeHtml } from '../utils/generateJapaneseResumeHtml.js';
+import {
+  WHISPER_PROMPT_HINT,
+  normalizeTranscriptForExtraction,
+  normalizeEmailField,
+  formatJapanPhoneDisplay,
+} from '../utils/voiceNormalization.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } }); // 25 MB
@@ -182,11 +188,47 @@ async function transcribeAudio(fileBuffer, mimeType = 'audio/webm', originalName
     const transcription = await openai.audio.transcriptions.create({
       file,
       model: 'whisper-1',
+      prompt: WHISPER_PROMPT_HINT,
     });
     return transcription?.text?.trim() || '';
   } catch (err) {
     console.warn('[voiceToResume] Whisper transcription failed:', err?.message);
     return '';
+  }
+}
+
+async function polishSelfPrJapanese(selfPrDraft, fullTranscript) {
+  const raw = String(selfPrDraft ?? '').trim();
+  if (!raw || !config.openai?.apiKey) return raw;
+  try {
+    const openai = new OpenAI({ apiKey: config.openai.apiKey });
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: `あなたは日本の履歴書向けのキャリアアドバイザーです。
+ユーザーが話した内容「だけ」を素材に、履歴書の「自己PR」欄にそのまま使える文章に整えます。
+
+必須:
+- です・ます調で統一。ビジネス向けの落ち着いた日本語。
+- 話にない実績・資格・数値は追加しない。言及されたスキル・経験を、自然な日本語で具体化・言い換えしてよい（例: 「React が分かる」→「React を用いた開発経験があり、実務でも活用した」程度）。
+- 技術名・サービス名は正しい表記（React, TypeScript, AWS など）。
+- 2～5 文程度、読みやすい段落。長すぎない（目安 300～600 文字、話が短ければ短くてよい）。
+- 出力は本文のみ。見出し、「自己PR:」、JSON、箇条書き記号は付けない。`,
+        },
+        {
+          role: 'user',
+          content: `【抽出された自己PRドラフト】\n${raw}\n\n【会話全文の参考（文脈補足）】\n${String(fullTranscript).slice(0, 4500)}`,
+        },
+      ],
+      temperature: 0.35,
+    });
+    const out = completion?.choices?.[0]?.message?.content?.trim();
+    return out || raw;
+  } catch (e) {
+    console.warn('[voiceToResume] polishSelfPrJapanese failed:', e?.message);
+    return raw;
   }
 }
 
@@ -206,7 +248,11 @@ Critical rules:
 - DO NOT invent personal details. If not explicitly stated, output empty string.
 - Keep full name in personal.name (family + given). Do not return only given name.
 - If transcript includes family and given separately, combine into personal.name.
-- self_pr (自己PR) must be filled when user talks about strengths/skills/PR/about themselves.
+- self_pr (自己PR): when the user describes skills, strengths, experience, or "about me", put a concise raw summary in other.self_pr (1～3 short sentences in Japanese or mixed); a second step will rewrite it for style.
+
+Email & phone (critical):
+- email MUST use the ASCII @ character only. Never write Russian "собака/собачка" or the word "at" as text — always use @ (e.g. user@gmail.com).
+- phone: Japanese mobile numbers — store digits in personal.phone; use Arabic digits. We will format later.
 
 Format rules:
 - birthdate should be ISO YYYY-MM-DD when possible.
@@ -259,14 +305,25 @@ function scrubInventedPersonalFields(transcript, formData) {
   const t = String(transcript ?? '').toLowerCase();
   const out = JSON.parse(JSON.stringify(formData || {}));
   const p = out.personal || {};
-  const scrubIfNotMentioned = (key) => {
-    const v = String(p[key] ?? '').trim();
-    if (!v) return;
-    if (!t.includes(v.toLowerCase())) p[key] = '';
-  };
-  scrubIfNotMentioned('email');
-  scrubIfNotMentioned('phone');
-  scrubIfNotMentioned('postal_code');
+
+  const emailHint = /@|собач|собак|\bmail\b|почт|gmail|имейл|yahoo|icloud|outlook|hotmail|\bdot\b|точка/i.test(
+    transcript,
+  );
+  if (p.email?.trim() && !emailHint) {
+    p.email = '';
+  }
+
+  const phoneHint = /\d{3,}/.test(transcript) || /телефон|phone|номер|携帯|でんわ|電話/i.test(transcript);
+  if (p.phone?.trim() && !phoneHint) {
+    p.phone = '';
+  }
+
+  const postalHint =
+    /〒|postal|zip|郵便|ゆうびん|почтов/i.test(transcript) || /\d{3}\s*[-ー－]?\s*\d{4}/.test(transcript);
+  if (p.postal_code?.trim() && !postalHint) {
+    p.postal_code = '';
+  }
+
   out.personal = p;
   return out;
 }
@@ -304,6 +361,7 @@ router.post(
         console.warn('[voiceToResume] Audio file too small:', size, 'bytes — recording may be empty');
       } else {
         transcript = await transcribeAudio(audioFile.buffer, mimetype, originalname);
+        transcript = normalizeTranscriptForExtraction(transcript);
         if (!transcript) console.warn('[voiceToResume] Whisper returned empty transcript (check OPENAI_API_KEY or audio format)');
       }
     } else {
@@ -330,6 +388,17 @@ router.post(
       : formDataDefault;
     const scrubbed = scrubInventedPersonalFields(transcript, formData);
     Object.assign(formData, scrubbed);
+
+    if (formData.personal) {
+      formData.personal.email = normalizeEmailField(formData.personal.email || '');
+      const phoneMode = process.env.JAPAN_PHONE_DISPLAY === 'intl' ? 'intl' : 'domestic';
+      formData.personal.phone = formatJapanPhoneDisplay(formData.personal.phone || '', phoneMode);
+    }
+
+    if (formData.other?.self_pr?.trim()) {
+      formData.other.self_pr = await polishSelfPrJapanese(formData.other.self_pr, transcript);
+    }
+
     if (avatarBase64) formData.avatarBase64 = avatarBase64;
     const previewHtml = buildPreviewHtml(formData, avatarBase64);
 
