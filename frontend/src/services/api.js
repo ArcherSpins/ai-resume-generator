@@ -86,12 +86,15 @@ export const api = {
         previewHtml: options?.previewHtml || undefined,
       }),
     }),
-  generateVoicePreview: (formData, avatarBase64) =>
+  getVoiceLayoutDemos: () => request('/voice-to-resume/layout-demos'),
+
+  generateVoicePreview: (formData, avatarBase64, voiceHtmlLayout) =>
     request('/voice-to-resume/preview', {
       method: 'POST',
       body: JSON.stringify({
         formData,
         avatarBase64: avatarBase64 || formData?.avatarBase64 || undefined,
+        voiceHtmlLayout: voiceHtmlLayout || undefined,
       }),
     }),
 

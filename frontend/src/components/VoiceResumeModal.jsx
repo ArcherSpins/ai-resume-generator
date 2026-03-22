@@ -2,7 +2,13 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import Modal from './Modal';
 import DynamicForm from './DynamicForm';
 import { useTranslation } from '../i18n/LanguageContext';
-import { api } from '../services/api';
+import { api, getAuthToken } from '../services/api';
+
+const VOICE_LAYOUT_OPTIONS = [
+  { id: 'classic', nameKey: 'voiceLayoutClassic' },
+  { id: 'modern', nameKey: 'voiceLayoutModern' },
+  { id: 'official', nameKey: 'voiceLayoutOfficial' },
+];
 
 const VOICE_QUESTIONS = [
   { id: 'name', key: 'field_name' },
@@ -14,7 +20,15 @@ const VOICE_QUESTIONS = [
   { id: 'experience', key: 'field_experience' },
   { id: 'licenses', key: 'field_licenses' },
   { id: 'self_pr', key: 'field_self_pr' },
+  { id: 'strength_points', key: 'field_strength_points' },
+  { id: 'weakness_points', key: 'field_weakness_points' },
+  { id: 'research_learning', key: 'field_research_learning' },
 ];
+
+/** Outer box height for large template demo preview on record step */
+const RECORD_LARGE_PREVIEW_WRAP_H = 440;
+/** Inner iframe content height before CSS scale (A4-ish) */
+const RECORD_LARGE_PREVIEW_IFRAME_H = 800;
 
 function AnimeGirlIllustrationSvg({ className }) {
   return (
@@ -70,6 +84,8 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
   const [microphones, setMicrophones] = useState([]);
   const [selectedMicId, setSelectedMicId] = useState('default');
   const [audioDebug, setAudioDebug] = useState(null);
+  const [voiceLayout, setVoiceLayout] = useState('classic');
+  const [layoutDemos, setLayoutDemos] = useState(null);
 
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
@@ -150,7 +166,49 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
     setEditingFormData({});
     setUpdatingPreview(false);
     setTranscript('');
+    setVoiceLayout('classic');
   }, [audioUrl, stopMeter]);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    api
+      .getVoiceLayoutDemos()
+      .then((r) => {
+        if (!cancelled && r?.demos) setLayoutDemos(r.demos);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
+
+  const handleLayoutPick = async (id) => {
+    if (id === voiceLayout) return;
+    setVoiceLayout(id);
+    if (step !== 'preview' || !voiceResult?.formData) return;
+    setUpdatingPreview(true);
+    try {
+      const merged = {
+        ...voiceResult.formData,
+        avatarBase64: voiceResult.formData.avatarBase64 || avatarBase64 || undefined,
+      };
+      const res = await api.generateVoicePreview(merged, merged.avatarBase64, id);
+      setPreviewHtml(res.previewHtml || previewHtml);
+      setVoiceResult({
+        schema: {
+          ...voiceResult.schema,
+          voiceHtmlLayout: id,
+          annotatedTemplateHtml: res.previewHtml,
+        },
+        formData: merged,
+      });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUpdatingPreview(false);
+    }
+  };
 
   const buildCompleteFormData = useCallback((schema, current) => {
     const base = { ...(current || {}) };
@@ -290,11 +348,14 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
       const mime = recordedMimeRef.current || 'audio/webm';
       const ext = mime.includes('mp4') || mime.includes('m4a') ? 'm4a' : 'webm';
       form.append('audio', audioBlob, `recording.${ext}`);
+      form.append('voiceLayout', voiceLayout);
       if (avatarFile) form.append('avatar', avatarFile, avatarFile.name || 'avatar.png');
       const base = import.meta.env.VITE_API_URL || '';
+      const token = getAuthToken();
       const res = await fetch(`${base}/voice-to-resume`, {
         method: 'POST',
         credentials: 'include',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         body: form,
       });
       if (!res.ok) {
@@ -302,6 +363,7 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
         throw new Error(err.error || res.statusText);
       }
       const data = await res.json();
+      if (data.voiceHtmlLayout) setVoiceLayout(data.voiceHtmlLayout);
       setPreviewHtml(data.previewHtml || '');
       const mergedFormData = { ...(data.formData || {}) };
       if (avatarBase64 && !mergedFormData.avatarBase64) mergedFormData.avatarBase64 = avatarBase64;
@@ -336,7 +398,7 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
         ...(editingFormData || {}),
         avatarBase64: editingFormData?.avatarBase64 || avatarBase64 || voiceResult?.formData?.avatarBase64,
       };
-      const res = await api.generateVoicePreview(merged, merged.avatarBase64);
+      const res = await api.generateVoicePreview(merged, merged.avatarBase64, voiceLayout);
       setPreviewHtml(res?.previewHtml || previewHtml);
       setVoiceResult({ schema: voiceResult.schema, formData: merged });
       setShowTextEdit(false);
@@ -386,6 +448,72 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
             <p className="text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm">
               {t('voiceRecordMinSeconds')}
             </p>
+            <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4 space-y-2">
+              <p className="text-sm font-medium text-slate-800">{t('voiceChooseLayout')}</p>
+              <p className="text-xs text-slate-500">{t('voiceLayoutPreviewHint')}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {VOICE_LAYOUT_OPTIONS.map((opt) => (
+                  <label
+                    key={opt.id}
+                    className={`flex flex-col gap-2 rounded-lg border-2 p-2 cursor-pointer transition ${
+                      voiceLayout === opt.id ? 'border-violet-500 bg-violet-50/60' : 'border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="voiceLayout"
+                        checked={voiceLayout === opt.id}
+                        onChange={() => handleLayoutPick(opt.id)}
+                        className="accent-violet-600"
+                      />
+                      <span className="text-xs font-semibold text-slate-800">{t(opt.nameKey)}</span>
+                    </div>
+                    <div
+                      className="w-full rounded-md border border-slate-200 bg-slate-50 overflow-hidden"
+                      style={{ height: 150 }}
+                    >
+                      {layoutDemos?.[opt.id] ? (
+                        <iframe
+                          title=""
+                          srcDoc={layoutDemos[opt.id]}
+                          className="w-full border-0 bg-white"
+                          style={{ height: 400, transform: 'scale(0.35)', transformOrigin: 'top left', width: '285%' }}
+                          sandbox="allow-same-origin"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-xs text-slate-400">…</div>
+                      )}
+                    </div>
+                  </label>
+                ))}
+              </div>
+              <div className="mt-4 pt-4 border-t border-slate-200">
+                <p className="text-sm font-medium text-slate-800 mb-2">{t('voiceLayoutLargePreviewTitle')}</p>
+                <p className="text-xs text-slate-500 mb-2">{t('voiceLayoutLargePreviewHint')}</p>
+                <div
+                  className="w-full rounded-lg border border-slate-300 bg-slate-100 overflow-hidden shadow-inner"
+                  style={{ height: RECORD_LARGE_PREVIEW_WRAP_H }}
+                >
+                  {layoutDemos?.[voiceLayout] ? (
+                    <iframe
+                      title={t('voiceLayoutLargePreviewTitle')}
+                      srcDoc={layoutDemos[voiceLayout]}
+                      className="w-full border-0 bg-white block"
+                      style={{
+                        height: RECORD_LARGE_PREVIEW_IFRAME_H,
+                        transform: 'scale(0.52)',
+                        transformOrigin: 'top left',
+                        width: '192.3%',
+                      }}
+                      sandbox="allow-same-origin"
+                    />
+                  ) : (
+                    <div className="flex h-full min-h-[280px] items-center justify-center text-sm text-slate-400">…</div>
+                  )}
+                </div>
+              </div>
+            </div>
             <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
               <label className="block text-sm font-medium text-slate-700 mb-2">
                 {t('voiceMicSelect')}
@@ -549,6 +677,28 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
 
         {step === 'preview' && (
           <div className="flex flex-col gap-3 min-h-0 flex-1">
+            <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4 space-y-2 shrink-0">
+              <p className="text-sm font-medium text-slate-800">{t('voiceChooseLayout')}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {VOICE_LAYOUT_OPTIONS.map((opt) => (
+                  <label
+                    key={opt.id}
+                    className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2 cursor-pointer text-xs font-medium ${
+                      voiceLayout === opt.id ? 'border-violet-500 bg-violet-50' : 'border-slate-200'
+                    } ${updatingPreview ? 'opacity-60 pointer-events-none' : ''}`}
+                  >
+                    <input
+                      type="radio"
+                      name="voiceLayoutPreview"
+                      checked={voiceLayout === opt.id}
+                      onChange={() => handleLayoutPick(opt.id)}
+                      className="accent-violet-600"
+                    />
+                    {t(opt.nameKey)}
+                  </label>
+                ))}
+              </div>
+            </div>
             <div className="rounded-xl border border-violet-200 bg-violet-50/80 p-3 sm:p-4 max-h-[140px] overflow-auto">
               <p className="text-xs sm:text-sm font-medium text-violet-800 mb-1.5 sm:mb-2">{t('voiceWhatYouSaid')}</p>
               {transcript ? (
@@ -559,7 +709,7 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
             </div>
             <div
               className="rounded-lg border border-slate-200 bg-white overflow-auto shrink-0"
-              style={{ height: '70vh', minHeight: 480 }}
+              style={{ height: '48vh', minHeight: 320 }}
             >
               {previewHtml ? (
                 <iframe
@@ -573,6 +723,27 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
                   {t('preview')}
                 </div>
               )}
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-2 sm:p-3 shrink-0 space-y-2">
+              <p className="text-sm font-medium text-slate-800">{t('voicePreviewLargeBottom')}</p>
+              <p className="text-xs text-slate-500">{t('voicePreviewLargeBottomHint')}</p>
+              <div
+                className="rounded-lg border border-slate-300 bg-white overflow-auto"
+                style={{ height: 'min(58vh, 720px)', minHeight: 400 }}
+              >
+                {previewHtml ? (
+                  <iframe
+                    srcDoc={previewHtml}
+                    title={t('voicePreviewLargeBottom')}
+                    className="w-full h-full min-h-[400px] border-0 block"
+                    sandbox="allow-same-origin"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center min-h-[320px] text-slate-500 p-4">
+                    {t('preview')}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex flex-wrap gap-2 justify-center">
               <button

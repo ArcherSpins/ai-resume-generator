@@ -6,6 +6,7 @@ import { fillDocxTemplate } from '../utils/fillDocxTemplate.js';
 import { fillXlsxTemplate } from '../utils/fillXlsxTemplate.js';
 import { fillAnnotatedTemplate } from '../utils/fillAnnotatedTemplate.js';
 import { generateJapaneseResumeHtml } from '../utils/generateJapaneseResumeHtml.js';
+import { computeJapaneseAgeFromBirthdate } from '../utils/birthdateAge.js';
 import { htmlToPdfBuffer, saveBuffer, getRelativePath } from '../services/pdfService.js';
 import { sendResumeEmailBuffer } from '../services/emailService.js';
 import { prisma } from '../utils/prisma.js';
@@ -143,10 +144,13 @@ router.post('/', requireAuth, async (req, res, next) => {
     }
 
     const flatData = flattenFormData(data);
+    const birthRawForAge = flatData.birthdate;
     if (flatData.birthdate && /^\d{4}-\d{2}-\d{2}$/.test(flatData.birthdate)) {
       const [y, m, d] = flatData.birthdate.split('-');
       flatData.birthdate = `${y}年${parseInt(m, 10)}月${parseInt(d, 10)}日`;
     }
+    const computedAge = computeJapaneseAgeFromBirthdate(birthRawForAge);
+    if (computedAge) flatData.age = computedAge;
 
     const annotatedDocxBase64 =
       req.body.annotatedDocxBase64 || schema.annotatedDocxBase64 || null;

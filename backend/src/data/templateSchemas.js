@@ -84,7 +84,18 @@ const RIREKISHO_FULL_SCHEMA = {
     { type: 'education', label: '学歴', fields: [{ name: 'year', type: 'text' }, { name: 'month', type: 'text' }, { name: 'description', type: 'text' }] },
     { type: 'experience', label: '職歴', fields: [{ name: 'year', type: 'text' }, { name: 'month', type: 'text' }, { name: 'description', type: 'text' }] },
     { type: 'licenses', label: '免許・資格', fields: [{ name: 'year', type: 'text' }, { name: 'month', type: 'text' }, { name: 'description', type: 'text' }] },
-    { type: 'other', label: 'その他', fields: [{ name: 'motivation', type: 'textarea' }, { name: 'self_pr', type: 'textarea' }, { name: 'preferences', type: 'textarea' }] },
+    {
+      type: 'other',
+      label: 'その他',
+      fields: [
+        { name: 'motivation', type: 'textarea' },
+        { name: 'self_pr', type: 'textarea' },
+        { name: 'strength_points', type: 'textarea' },
+        { name: 'weakness_points', type: 'textarea' },
+        { name: 'research_learning', type: 'textarea' },
+        { name: 'preferences', type: 'textarea' },
+      ],
+    },
   ],
 };
 
@@ -207,6 +218,9 @@ const RIREKISHO_FULL_DEFAULT_DATA = {
       'フルスタックエンジニアとして7年以上の経験があり、Ruby・JavaScript・Goなどを使用した開発を担当してきました。現在はエンジニアマネージャーとして多様なチームを率いており、Scrum Master資格の取得も目指して学習中です。2015年に日本語能力試験N1を取得し、4年以上にわたり日本語で業務経験があるため、日英両言語でのコミュニケーションが可能です。',
     self_pr:
       'チームでの協調性を大切にし、技術選定からリリースまで一貫して携わってきました。エンジニアマネージャーとして採用・育成・プロジェクト推進の経験を活かし、貴社の開発体制強化に貢献したいと考えております。',
+    strength_points: '',
+    weakness_points: '',
+    research_learning: '',
     preferences: '貴社の規定に従います。',
   },
 };
@@ -233,6 +247,9 @@ const VOICE_RIREKISHO_DEFAULT_DATA = {
   other: {
     motivation: '',
     self_pr: '',
+    strength_points: '',
+    weakness_points: '',
+    research_learning: '',
     preferences: '',
   },
 };

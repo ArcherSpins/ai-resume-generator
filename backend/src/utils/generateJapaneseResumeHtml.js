@@ -1,44 +1,16 @@
 /**
- * Built-in Japanese 履歴書 (rirekisho) HTML template.
- * Used as a final fallback when no DOCX/XLSX template is available.
+ * Built-in Japanese 履歴書 (rirekisho) HTML — classic single-page layout.
  */
-
-function esc(v) {
-  return String(v ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-function nl2br(v) {
-  return esc(v).replace(/\n/g, '<br>');
-}
-
-function disp(v) {
-  const s = String(v ?? '').trim();
-  return s ? esc(s) : '<span class="muted">—</span>';
-}
-
-function dispBlock(v) {
-  const s = String(v ?? '').trim();
-  return s ? nl2br(s) : '<span class="muted">—</span>';
-}
-
-function row(label, value, colspan = 2) {
-  if (!value) return '';
-  return `<tr>
-    <td class="lbl">${esc(label)}</td>
-    <td class="val" ${colspan > 2 ? `colspan="${colspan - 1}"` : ''}>${nl2br(value)}</td>
-  </tr>`;
-}
+import {
+  disp,
+  dispBlock,
+  renderDatedHistorySection,
+  photoCellHtml,
+} from './resumeHtmlCommon.js';
 
 export function generateJapaneseResumeHtml(data = {}, avatar = null) {
   const d = data;
-
-  const photoHtml = avatar
-    ? `<img src="${esc(avatar)}" alt="" style="width:30mm;height:40mm;object-fit:cover;display:block;margin:0 auto;" />`
-    : `<div style="width:30mm;height:40mm;border:1px solid #2c2c2c;background:#fafafa;display:flex;align-items:center;justify-content:center;color:#888;font-size:9pt;">写真</div>`;
+  const photoHtml = photoCellHtml(avatar);
 
   return `<!DOCTYPE html>
 <html lang="ja">
@@ -56,6 +28,8 @@ export function generateJapaneseResumeHtml(data = {}, avatar = null) {
   .lbl { background: #f8f8f8; font-size: 9.5pt; white-space: nowrap; width: 24mm; }
   .val { min-height: 20px; white-space: pre-wrap; }
   .sec-hd { background: #e8e8e8; font-weight: bold; text-align: center; font-size: 11pt; padding: 5px 7px; }
+  .sub-hd { background: #f0f0f0; font-size: 9.5pt; text-align: center; font-weight: bold; white-space: nowrap; }
+  td.ym { width: 11%; text-align: center; white-space: nowrap; vertical-align: top; }
   .muted { color: #9aa3af; }
 </style>
 </head>
@@ -65,7 +39,7 @@ export function generateJapaneseResumeHtml(data = {}, avatar = null) {
   <tr>
     <td class="lbl">ふりがな</td>
     <td class="val">${disp(d.furigana)}</td>
-    <td rowspan="4" style="width:37mm;text-align:center;vertical-align:middle;border:1px solid #2c2c2c;padding:4px;">${photoHtml}</td>
+    <td rowspan="5" style="width:37mm;text-align:center;vertical-align:middle;border:1px solid #2c2c2c;padding:4px;">${photoHtml}</td>
   </tr>
   <tr>
     <td class="lbl">氏名</td>
@@ -78,6 +52,10 @@ export function generateJapaneseResumeHtml(data = {}, avatar = null) {
   <tr>
     <td class="lbl">生年月日</td>
     <td class="val">${disp(d.birthdate)}</td>
+  </tr>
+  <tr>
+    <td class="lbl">年齢</td>
+    <td class="val">${disp(d.age)}</td>
   </tr>
   <tr><td class="lbl">性別</td><td class="val" colspan="2">${disp(d.gender)}</td></tr>
   <tr><td class="lbl">国籍</td><td class="val" colspan="2">${disp(d.nationality)}</td></tr>
@@ -94,14 +72,9 @@ export function generateJapaneseResumeHtml(data = {}, avatar = null) {
   <tr><td class="lbl">本国住所</td><td class="val" colspan="2">${disp(d.home_address)}</td></tr>
 </table>
 
-<table><tr><td class="sec-hd" colspan="2">学　歴</td></tr>
-<tr><td class="val" colspan="2" style="min-height:60px;">${dispBlock(d.education)}</td></tr></table>
-
-<table><tr><td class="sec-hd" colspan="2">職　歴</td></tr>
-<tr><td class="val" colspan="2" style="min-height:60px;">${dispBlock(d.experience)}</td></tr></table>
-
-<table><tr><td class="sec-hd" colspan="2">免許・資格</td></tr>
-<tr><td class="val" colspan="2" style="min-height:40px;">${dispBlock(d.licenses)}</td></tr></table>
+${renderDatedHistorySection('学　歴', d.educationEntries, d.education, '学歴')}
+${renderDatedHistorySection('職　歴', d.experienceEntries, d.experience, '職歴')}
+${renderDatedHistorySection('免許・資格', d.licensesEntries, d.licenses, '免許・資格')}
 
 <table>
   <tr><td class="lbl">得意な科目・分野</td><td class="val">${dispBlock(d.strong_subjects)}</td></tr>

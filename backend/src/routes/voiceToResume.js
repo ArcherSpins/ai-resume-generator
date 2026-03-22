@@ -5,13 +5,18 @@ import { config } from '../config/index.js';
 import { requireAuth } from '../middleware/auth.js';
 import { getSchema } from '../data/templateSchemas.js';
 import { TEMPLATE_IDS } from '../data/templateList.js';
-import { generateJapaneseResumeHtml } from '../utils/generateJapaneseResumeHtml.js';
+import {
+  generateVoiceResumeHtml,
+  normalizeVoiceHtmlLayout,
+  buildAllVoiceLayoutDemos,
+} from '../utils/voiceResumeHtml.js';
 import {
   WHISPER_PROMPT_HINT,
   normalizeTranscriptForExtraction,
   normalizeEmailField,
   formatJapanPhoneDisplay,
 } from '../utils/voiceNormalization.js';
+import { computeJapaneseAgeFromBirthdate } from '../utils/birthdateAge.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } }); // 25 MB
@@ -98,6 +103,11 @@ function buildFormDataFromExtract(extract) {
     other: {
       motivation: String(other.motivation ?? '').trim(),
       self_pr: String(selfPrRaw ?? '').trim(),
+      strength_points: String(other.strength_points ?? other.strengths ?? '').trim(),
+      weakness_points: String(other.weakness_points ?? other.weaknesses ?? '').trim(),
+      research_learning: String(
+        other.research_learning ?? other.kenkyuu ?? other.study_topics ?? other.gakushuu ?? '',
+      ).trim(),
       preferences: String(other.preferences ?? '').trim(),
     },
   };
@@ -125,6 +135,9 @@ function blankVoiceFormData() {
     other: {
       motivation: '',
       self_pr: '',
+      strength_points: '',
+      weakness_points: '',
+      research_learning: '',
       preferences: '',
     },
   };
@@ -249,16 +262,25 @@ Critical rules:
 - Keep full name in personal.name (family + given). Do not return only given name.
 - If transcript includes family and given separately, combine into personal.name.
 - self_pr (自己PR): when the user describes skills, strengths, experience, or "about me", put a concise raw summary in other.self_pr (1～3 short sentences in Japanese or mixed); a second step will rewrite it for style.
+- other.strength_points: user's stated strengths / 長所 / strong points (Japanese, 1～4 short lines). Empty if not mentioned.
+- other.weakness_points: stated weaknesses, areas to improve / 弱み / 課題. Empty if not mentioned.
+- other.research_learning: studies, self-learning, research, courses, 独学・研修・研究してきたこと. Empty if not mentioned.
 
 Email & phone (critical):
 - email MUST use the ASCII @ character only. Never write Russian "собака/собачка" or the word "at" as text — always use @ (e.g. user@gmail.com).
 - phone: Japanese mobile numbers — store digits in personal.phone; use Arabic digits. We will format later.
 
 Format rules:
-- birthdate should be ISO YYYY-MM-DD when possible.
+- birthdate should be ISO YYYY-MM-DD when possible (you may omit personal.age if birthdate is set; the server computes 年齢).
 - gender must be one of: 男, 女, その他.
 - postal code format: 333-0854 if present.
-- education/experience/licenses arrays: {year, month, description}, month as "1".."12".
+
+Education / work / qualifications (educationEntries, experienceEntries, licensesEntries):
+- Output an ARRAY of objects: {"year":"","month":"","description":""}.
+- ONE row per school period, job (start or line), or license/certificate.
+- If the user states a date (any language: "2012年", "в 2012", "April 2020", "2020年4月"), set year to 4-digit Western year as string (e.g. "2012") and month to "1".."12" or "" if only year was given.
+- If the user did NOT mention a date for that row, use "" for BOTH year and month (leave date cells empty). Never guess dates.
+- description: short Japanese text for that row (school name, company + role, license name). Do not repeat the full date in description if year/month are already set.
 
 Output JSON shape:
 {
@@ -286,6 +308,9 @@ Output JSON shape:
     "motivation": "",
     "self_pr": "",
     "jikoPR": "",
+    "strength_points": "",
+    "weakness_points": "",
+    "research_learning": "",
     "preferences": ""
   }
 }`;
@@ -328,9 +353,20 @@ function scrubInventedPersonalFields(transcript, formData) {
   return out;
 }
 
-function buildPreviewHtml(formData, avatarBase64) {
-  const flatForHtml = flattenForHtml(formData);
-  return generateJapaneseResumeHtml(flatForHtml, avatarBase64 || formData?.avatarBase64 || null);
+function buildPreviewHtml(formData, avatarBase64, voiceLayout = 'classic') {
+  const data =
+    formData && typeof formData === 'object'
+      ? JSON.parse(JSON.stringify(formData))
+      : { personal: {}, education: [], experience: [], licenses: [], other: {} };
+  const av = avatarBase64 || data?.avatarBase64 || formData?.avatarBase64 || null;
+  const bd = String(data.personal?.birthdate ?? '').trim();
+  if (bd) {
+    const computedAge = computeJapaneseAgeFromBirthdate(bd);
+    if (computedAge) data.personal = { ...data.personal, age: computedAge };
+  }
+  const flatForHtml = flattenForHtml(data);
+  const layout = normalizeVoiceHtmlLayout(voiceLayout);
+  return generateVoiceResumeHtml(layout, flatForHtml, av);
 }
 
 router.post(
@@ -393,6 +429,11 @@ router.post(
       formData.personal.email = normalizeEmailField(formData.personal.email || '');
       const phoneMode = process.env.JAPAN_PHONE_DISPLAY === 'intl' ? 'intl' : 'domestic';
       formData.personal.phone = formatJapanPhoneDisplay(formData.personal.phone || '', phoneMode);
+      const bd = String(formData.personal.birthdate ?? '').trim();
+      if (bd) {
+        const computedAge = computeJapaneseAgeFromBirthdate(bd);
+        if (computedAge) formData.personal.age = computedAge;
+      }
     }
 
     if (formData.other?.self_pr?.trim()) {
@@ -400,7 +441,8 @@ router.post(
     }
 
     if (avatarBase64) formData.avatarBase64 = avatarBase64;
-    const previewHtml = buildPreviewHtml(formData, avatarBase64);
+    const voiceLayout = normalizeVoiceHtmlLayout(req.body?.voiceLayout);
+    const previewHtml = buildPreviewHtml(formData, avatarBase64, voiceLayout);
 
     const payload = {
       schema: {
@@ -408,14 +450,24 @@ router.post(
         avatarRequired: schema.avatarRequired !== false,
         annotatedTemplateHtml: previewHtml,
         generationMode: 'voice',
+        voiceHtmlLayout: voiceLayout,
       },
       formData,
       previewHtml,
       transcript,
+      voiceHtmlLayout: voiceLayout,
     };
     res.json(payload);
   } catch (err) {
     next(err);
+  }
+});
+
+router.get('/layout-demos', requireAuth, (_req, res) => {
+  try {
+    res.json({ demos: buildAllVoiceLayoutDemos() });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to build demos' });
   }
 });
 
@@ -425,8 +477,13 @@ router.post('/preview', requireAuth, async (req, res, next) => {
     if (!formData || typeof formData !== 'object') {
       return res.status(400).json({ error: 'formData required' });
     }
-    const previewHtml = buildPreviewHtml(formData, req.body?.avatarBase64 || formData?.avatarBase64 || null);
-    res.json({ previewHtml });
+    const voiceLayout = normalizeVoiceHtmlLayout(req.body?.voiceHtmlLayout);
+    const previewHtml = buildPreviewHtml(
+      formData,
+      req.body?.avatarBase64 || formData?.avatarBase64 || null,
+      voiceLayout,
+    );
+    res.json({ previewHtml, voiceHtmlLayout });
   } catch (err) {
     next(err);
   }
