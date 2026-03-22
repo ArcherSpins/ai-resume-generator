@@ -3,9 +3,9 @@ import multer from 'multer';
 import OpenAI, { toFile } from 'openai';
 import { config } from '../config/index.js';
 import { requireAuth } from '../middleware/auth.js';
-import { getSchema, getTemplateBuffer } from '../data/defaultTemplates.js';
+import { getSchema } from '../data/templateSchemas.js';
+import { TEMPLATE_IDS } from '../data/templateList.js';
 import { generateJapaneseResumeHtml } from '../utils/generateJapaneseResumeHtml.js';
-import { TEMPLATE_IDS } from '../data/defaultTemplates.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } }); // 25 MB
@@ -313,6 +313,7 @@ router.post(
     const templateId = TEMPLATE_IDS.VOICE_RIREKISHO_DOCX;
     const schema = getSchema(templateId);
     const formDataDefault = blankVoiceFormData();
+    const { getTemplateBuffer } = await import('../data/defaultTemplates.js');
     const buffer = await getTemplateBuffer(templateId);
     if (!schema || !buffer) {
       return res.status(500).json({ error: 'Template not found' });

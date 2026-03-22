@@ -63,18 +63,60 @@ function wrapIfNeeded(htmlContent) {
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${RESUME_CSS}</style></head><body>${htmlContent}</body></html>`;
 }
 
+/** One shared Chromium for all PDFs — avoids ~1–3s launch per request (big win under load). */
+let browserPromise = null;
+
+async function getPdfBrowser() {
+  if (!browserPromise) {
+    browserPromise = puppeteer
+      .launch({
+        headless: true,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+        ],
+      })
+      .then((browser) => {
+        browser.on('disconnected', () => {
+          browserPromise = null;
+        });
+        return browser;
+      })
+      .catch((err) => {
+        browserPromise = null;
+        throw err;
+      });
+  }
+  return browserPromise;
+}
+
+/** Optional: close before process exit (tests / graceful shutdown). */
+export async function closePdfBrowser() {
+  if (!browserPromise) return;
+  try {
+    const b = await browserPromise;
+    await b.close();
+  } catch (_) {
+    /* ignore */
+  }
+  browserPromise = null;
+}
+
 /**
  * Render HTML to a PDF Buffer via Puppeteer.
  * Accepts both full HTML documents and plain body snippets.
  */
 export async function htmlToPdfBuffer(htmlContent) {
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  });
+  const browser = await getPdfBrowser();
+  const page = await browser.newPage();
   try {
-    const page = await browser.newPage();
-    await page.setContent(wrapIfNeeded(htmlContent), { waitUntil: 'networkidle0' });
+    // `load` is much faster than networkidle0 for static résumé HTML; quality unchanged.
+    await page.setContent(wrapIfNeeded(htmlContent), {
+      waitUntil: 'load',
+      timeout: 60_000,
+    });
     const buffer = await page.pdf({
       format: 'A4',
       margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' },
@@ -82,7 +124,7 @@ export async function htmlToPdfBuffer(htmlContent) {
     });
     return Buffer.from(buffer);
   } finally {
-    await browser.close();
+    await page.close().catch(() => {});
   }
 }
 

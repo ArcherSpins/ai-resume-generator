@@ -19,7 +19,7 @@ const VOICE_QUESTIONS = [
 function AnimeGirlIllustrationSvg({ className }) {
   return (
     <div className={`w-full flex items-center justify-center bg-gradient-to-b from-violet-50/80 to-fuchsia-50/80 ${className || ''}`} style={{ minHeight: 260 }}>
-      <svg viewBox="0 0 200 260" className="w-full max-h-[260px] object-contain" style={{ minHeight: 220 }} aria-hidden>
+      <svg viewBox="0 0 200 260" className="w-full max-h-[260px] object-contain animate-float" style={{ minHeight: 220 }} aria-hidden>
         <defs>
           <linearGradient id="vg-hair" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#5c4033" /><stop offset="100%" stopColor="#3d2914" /></linearGradient>
           <linearGradient id="vg-skin" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#ffecd2" /><stop offset="100%" stopColor="#fcb69f" /></linearGradient>
@@ -41,41 +41,7 @@ function AnimeGirlIllustrationSvg({ className }) {
           <ellipse cx="155" cy="148" rx="14" ry="18" fill="url(#vg-skin)" /><ellipse cx="158" cy="145" rx="6" ry="7" fill="url(#vg-skin)" />
         </g>
       </svg>
-      <style>{`@keyframes voiceWave { 0%, 100% { transform: rotate(-10deg); } 50% { transform: rotate(14deg); } }`}</style>
-    </div>
-  );
-}
-
-const ANIME_GIRL_FRAMES = [
-  'https://cdn.pixabay.com/photo/2018/05/24/14/53/anime-3425879_960_720.png',
-  'https://cdn.pixabay.com/photo/2018/05/24/14/54/anime-3425881_960_720.png',
-  'https://cdn.pixabay.com/photo/2018/05/24/14/54/anime-3425882_960_720.png',
-];
-
-function AnimeGirlIllustration({ className }) {
-  const [frame, setFrame] = useState(0);
-  const [imgError, setImgError] = useState(false);
-  useEffect(() => {
-    if (ANIME_GIRL_FRAMES.length <= 1) return;
-    const id = setInterval(() => setFrame((f) => (f + 1) % ANIME_GIRL_FRAMES.length), 450);
-    return () => clearInterval(id);
-  }, []);
-  const src = ANIME_GIRL_FRAMES[frame] ?? ANIME_GIRL_FRAMES[0];
-  return (
-    <div className={`w-full flex items-center justify-center bg-gradient-to-b from-violet-50/80 to-fuchsia-50/80 ${className || ''}`} style={{ minHeight: 260 }}>
-      {!imgError ? (
-        <img
-          src={src}
-          alt=""
-          className="max-h-[260px] w-auto object-contain animate-float"
-          style={{ minHeight: 200 }}
-          aria-hidden
-          onError={() => setImgError(true)}
-        />
-      ) : (
-        <AnimeGirlIllustrationSvg />
-      )}
-      <style>{`@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } } .animate-float { animation: float 2.5s ease-in-out infinite; }`}</style>
+      <style>{`@keyframes voiceWave { 0%, 100% { transform: rotate(-10deg); } 50% { transform: rotate(14deg); } } @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } } .animate-float { animation: float 2.5s ease-in-out infinite; }`}</style>
     </div>
   );
 }
@@ -404,7 +370,7 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
         {step === 'record' && (
           <>
             <div className="rounded-xl border border-violet-100 overflow-hidden w-full min-w-0">
-              <AnimeGirlIllustration className="rounded-t-xl" />
+              <AnimeGirlIllustrationSvg className="rounded-t-xl" />
             </div>
             <p className="text-center text-slate-700 text-xs sm:text-base px-1 sm:px-2 leading-relaxed">
               {t('voiceGreeting')}

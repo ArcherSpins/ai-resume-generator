@@ -237,44 +237,30 @@ router.post('/', requireAuth, async (req, res, next) => {
       });
     });
 
-    try {
-      const attachName = generationMode !== 'voice' && nativeBuffer && nativeExt
-        ? `${base}.${nativeExt}`
-        : `${base}.pdf`;
-      const attachBuffer = generationMode !== 'voice' && nativeBuffer && nativeExt
-        ? nativeBuffer
-        : pdfBuffer;
-      const attachMime = generationMode !== 'voice' && nativeBuffer && nativeExt
-        ? (nativeExt === 'xlsx'
-            ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-            : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-        : 'application/pdf';
-      await sendResumeEmailBuffer(req.user.email, attachBuffer, attachName, req.user.name, attachMime);
-    } catch (emailErr) {
-      // Fallback: if storage read fails, still send in-memory generated file.
-      try {
-        const attachName = generationMode !== 'voice' && nativeBuffer && nativeExt
-          ? `${base}.${nativeExt}`
-          : `${base}.pdf`;
-        const attachBuffer = generationMode !== 'voice' && nativeBuffer && nativeExt
-          ? nativeBuffer
-          : pdfBuffer;
-        const attachMime = generationMode !== 'voice' && nativeBuffer && nativeExt
-          ? (nativeExt === 'xlsx'
-              ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-              : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-          : 'application/pdf';
-        await sendResumeEmailBuffer(req.user.email, attachBuffer, attachName, req.user.name, attachMime);
-      } catch (fallbackErr) {
-        console.error('Email send failed:', fallbackErr);
-      }
-    }
-
     res.json({
       id: resume.id,
       filePath: generatedUrls.pdf,
       generatedFiles: generatedUrls,
       createdAt: resume.createdAt,
+    });
+
+    // SMTP can take 10–60s+ — never block the HTTP response on email.
+    const attachName =
+      generationMode !== 'voice' && nativeBuffer && nativeExt
+        ? `${base}.${nativeExt}`
+        : `${base}.pdf`;
+    const attachBuffer =
+      generationMode !== 'voice' && nativeBuffer && nativeExt ? nativeBuffer : pdfBuffer;
+    const attachMime =
+      generationMode !== 'voice' && nativeBuffer && nativeExt
+        ? nativeExt === 'xlsx'
+          ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        : 'application/pdf';
+    setImmediate(() => {
+      sendResumeEmailBuffer(req.user.email, attachBuffer, attachName, req.user.name, attachMime).catch(
+        (emailErr) => console.error('Email send failed:', emailErr),
+      );
     });
   } catch (err) {
     if (err?.code === 'VOICE_LIMIT_REACHED' || err?.code === 'TEMPLATE_LIMIT_REACHED') {
