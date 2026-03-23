@@ -53,13 +53,13 @@ function Field({ field, value, onChange, showErrors, onAddressLookupSuccess }) {
   const [zipLookupError, setZipLookupError] = useState(null);
 
   const inputClass =
-    'mt-1 block w-full rounded-lg border bg-white px-3 py-2 text-slate-900 shadow-sm ' +
+    'mt-1 block w-full rounded-lg border bg-surface px-3 py-2 text-ink shadow-sm ' +
     'focus:outline-none focus:ring-1 transition ';
 
   const error = (touched || showErrors) ? validateField(field.name, value) : null;
   const borderClass = error
     ? 'border-red-400 focus:border-red-500 focus:ring-red-400'
-    : 'border-slate-200 focus:border-emerald-500 focus:ring-emerald-500';
+    : 'border-edge focus:border-primary focus:ring-primary';
 
   const id = `field-${field.name}`;
 
@@ -78,7 +78,7 @@ function Field({ field, value, onChange, showErrors, onAddressLookupSuccess }) {
           className={`${inputClass}${borderClass}`}
           placeholder={field.placeholder}
         />
-        {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+        {error && <p className="mt-1 text-xs text-danger">{error}</p>}
       </div>
     );
   }
@@ -95,7 +95,7 @@ function Field({ field, value, onChange, showErrors, onAddressLookupSuccess }) {
           onBlur={handleBlur}
           className={`${inputClass}${borderClass}`}
         />
-        {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+        {error && <p className="mt-1 text-xs text-danger">{error}</p>}
       </div>
     );
   }
@@ -118,7 +118,7 @@ function Field({ field, value, onChange, showErrors, onAddressLookupSuccess }) {
             </option>
           ))}
         </select>
-        {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+        {error && <p className="mt-1 text-xs text-danger">{error}</p>}
       </div>
     );
   }
@@ -138,7 +138,7 @@ function Field({ field, value, onChange, showErrors, onAddressLookupSuccess }) {
           className={`${inputClass}${borderClass}`}
           placeholder="name@example.com"
         />
-        {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+        {error && <p className="mt-1 text-xs text-danger">{error}</p>}
       </div>
     );
   }
@@ -162,7 +162,7 @@ function Field({ field, value, onChange, showErrors, onAddressLookupSuccess }) {
           placeholder="090-0000-0000"
           maxLength={13}
         />
-        {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+        {error && <p className="mt-1 text-xs text-danger">{error}</p>}
       </div>
     );
   }
@@ -185,7 +185,7 @@ function Field({ field, value, onChange, showErrors, onAddressLookupSuccess }) {
           placeholder="2020"
           maxLength={4}
         />
-        {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+        {error && <p className="mt-1 text-xs text-danger">{error}</p>}
       </div>
     );
   }
@@ -243,13 +243,13 @@ function Field({ field, value, onChange, showErrors, onAddressLookupSuccess }) {
             type="button"
             onClick={handleLookup}
             disabled={zipLookupLoading}
-            className="rounded-lg bg-emerald-600 text-white px-4 py-2 text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 transition shrink-0"
+            className="rounded-lg bg-primary text-on-primary px-4 py-2 text-sm font-medium hover:opacity-90 disabled:opacity-50 transition shrink-0"
           >
             {zipLookupLoading ? '…' : '検索'}
           </button>
         </div>
         {(zipLookupError || error) && (
-          <p className="text-xs text-red-600">{zipLookupError || error}</p>
+          <p className="text-xs text-danger">{zipLookupError || error}</p>
         )}
       </div>
     );
@@ -273,7 +273,7 @@ function Field({ field, value, onChange, showErrors, onAddressLookupSuccess }) {
           placeholder="4"
           maxLength={2}
         />
-        {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+        {error && <p className="mt-1 text-xs text-danger">{error}</p>}
       </div>
     );
   }
@@ -290,7 +290,7 @@ function Field({ field, value, onChange, showErrors, onAddressLookupSuccess }) {
         className={`${inputClass}${borderClass}`}
         placeholder={field.placeholder}
       />
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-xs text-danger">{error}</p>}
     </div>
   );
 }
@@ -327,14 +327,14 @@ function SectionBlock({ section, data, onChange, onAdd, onRemove, canRemove, t, 
     section.fields?.some((f) => f.name === 'description');
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4 space-y-3 shadow-sm">
+    <div className="rounded-xl border border-edge bg-surface p-3 sm:p-4 space-y-3 shadow-card">
       <div className="flex items-center justify-between gap-2">
-        <h4 className="font-semibold text-slate-700 text-sm sm:text-base">{sectionLabel}</h4>
+        <h4 className="font-semibold text-ink-muted text-sm sm:text-base">{sectionLabel}</h4>
         {canRemove && (
           <button
             type="button"
             onClick={onRemove}
-            className="text-xs text-slate-400 hover:text-red-500 transition border border-slate-200 rounded-lg px-2 py-1"
+            className="text-xs text-ink-faint hover:text-red-500 transition border border-edge rounded-lg px-2 py-1"
           >
             {t('remove')}
           </button>
@@ -351,7 +351,7 @@ function SectionBlock({ section, data, onChange, onAdd, onRemove, canRemove, t, 
               <div key={fname}>
                 <label
                   htmlFor={`field-${fname}`}
-                  className="block text-xs font-medium text-slate-500 mb-1"
+                  className="block text-xs font-medium text-ink-muted mb-1"
                 >
                   {getFieldLabel(fname)}
                 </label>
@@ -380,7 +380,7 @@ function SectionBlock({ section, data, onChange, onAdd, onRemove, canRemove, t, 
             >
               <label
                 htmlFor={`field-${f.name}`}
-                className="block text-sm font-medium text-slate-600 mb-1"
+                className="block text-sm font-medium text-ink-muted mb-1"
               >
                 {getFieldLabel(f.name)}
               </label>
@@ -404,7 +404,7 @@ function SectionBlock({ section, data, onChange, onAdd, onRemove, canRemove, t, 
         <button
           type="button"
           onClick={onAdd}
-          className="text-sm text-emerald-600 hover:text-emerald-700 font-medium hover:underline transition"
+          className="text-sm text-primary hover:text-primary font-medium hover:underline transition"
         >
           {t('addAnother')}
         </button>
@@ -507,7 +507,7 @@ export default function DynamicForm({ schema, formData, setFormData, showErrors 
           }
           return (
             <div key={section.type} className="space-y-3">
-              <p className="text-xs text-slate-400 font-medium uppercase tracking-wide px-1">
+              <p className="text-xs text-ink-faint font-medium uppercase tracking-wide px-1">
                 {t(`section_${section.type}`) !== `section_${section.type}`
                   ? t(`section_${section.type}`)
                   : section.label}

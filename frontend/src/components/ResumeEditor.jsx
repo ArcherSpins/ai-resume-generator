@@ -27,6 +27,9 @@ const editorCss = `
     color: #94a3b8;
     pointer-events: none;
   }
+  .dark .ProseMirror { color: #fafafa; }
+  .dark .tiptap-placeholder::before { color: #a1a1aa; }
+  .dark .ProseMirror img.ProseMirror-selectednode { outline-color: rgb(52 211 153); }
 `;
 
 function fileToDataUrl(file) {
@@ -122,17 +125,17 @@ export default function ResumeEditor({ initialHtml, onChange, placeholder }) {
   if (!editor) return null;
 
   return (
-    <div className="resume-editor rounded-xl border border-slate-200 bg-white overflow-hidden">
+    <div className="resume-editor rounded-xl border border-edge bg-surface overflow-hidden">
       <style>{editorCss}</style>
-      <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2">
+      <div className="flex items-center gap-2 border-b border-edge bg-surface-2 px-3 py-2">
         <button
           type="button"
           onClick={addImage}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
+          className="rounded-lg border border-edge bg-surface px-3 py-1.5 text-sm font-medium text-ink-muted hover:bg-surface-2"
         >
           {t('insertPhoto')}
         </button>
-        <span className="text-xs text-slate-500">{t('editorImageHint')}</span>
+        <span className="text-xs text-ink-muted">{t('editorImageHint')}</span>
       </div>
       <EditorContent editor={editor} />
     </div>

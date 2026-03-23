@@ -4,9 +4,98 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: 'DM Sans', system-ui, sans-serif;
-  @apply bg-slate-50 text-slate-800 antialiased;
+:root {
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+
+  /* Surfaces */
+  --color-canvas: 248 250 252;
+  --color-surface: 255 255 255;
+  --color-surface-2: 241 245 249;
+  --color-surface-3: 226 232 240;
+  --color-edge: 226 232 240;
+  --color-edge-subtle: 241 245 249;
+
+  /* Text */
+  --color-ink: 15 23 42;
+  --color-ink-muted: 71 85 105;
+  --color-ink-faint: 148 163 184;
+
+  /* Brand (emerald) */
+  --color-primary: 5 150 105;
+  --color-primary-soft: 236 253 245;
+  --color-on-primary: 255 255 255;
+
+  /* Semantic */
+  --color-danger: 220 38 38;
+  --color-danger-soft: 254 242 242;
+  --color-on-danger: 255 255 255;
+  --color-warning: 180 83 9;
+  --color-warning-soft: 254 243 199;
+  --color-on-warning: 69 26 3;
+  --color-info: 37 99 235;
+  --color-info-soft: 239 246 255;
+  --color-on-info: 255 255 255;
+
+  /* Voice CTA / accents */
+  --color-voice: 124 58 237;
+  --color-voice-soft: 237 233 254;
+  --color-on-voice: 255 255 255;
+
+  --color-overlay: 15 23 42;
+  --color-preview-tray: 241 245 249;
+
+  --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.05);
+  --shadow-modal: 0 25px 50px -12px rgb(15 23 42 / 0.15);
+
+  --gradient-auth: linear-gradient(to bottom right, rgb(15 23 42), rgb(30 41 59), rgb(15 23 42));
+  --gradient-about: linear-gradient(to right, rgb(124 58 237), rgb(192 38 211), rgb(79 70 229));
+}
+
+.dark {
+  --color-canvas: 15 23 42;
+  --color-surface: 30 41 59;
+  --color-surface-2: 51 65 85;
+  --color-surface-3: 71 85 105;
+  --color-edge: 71 85 105;
+  --color-edge-subtle: 51 65 85;
+
+  --color-ink: 250 250 250;
+  --color-ink-muted: 203 213 225;
+  --color-ink-faint: 148 163 184;
+
+  --color-primary: 52 211 153;
+  --color-primary-soft: 6 95 70;
+  --color-on-primary: 255 255 255;
+
+  --color-danger: 248 113 113;
+  --color-danger-soft: 127 29 29;
+  --color-on-danger: 127 29 29;
+  --color-warning: 250 204 21;
+  --color-warning-soft: 120 53 15;
+  --color-on-warning: 254 243 199;
+  --color-info: 96 165 250;
+  --color-info-soft: 30 64 175;
+  --color-on-info: 239 246 255;
+
+  --color-voice: 167 139 250;
+  --color-voice-soft: 88 28 135;
+  --color-on-voice: 245 243 255;
+
+  --color-overlay: 15 23 42;
+  --color-preview-tray: 51 65 85;
+
+  --shadow-card: 0 1px 3px 0 rgb(2 6 23 / 0.25);
+  --shadow-modal: 0 25px 50px -12px rgb(2 6 23 / 0.45);
+
+  --gradient-auth: linear-gradient(to bottom right, rgb(15 23 42), rgb(30 41 59), rgb(15 23 42));
+  --gradient-about: linear-gradient(to right, rgb(109 40 217), rgb(162 28 175), rgb(67 56 202));
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    @apply bg-canvas text-ink antialiased;
+  }
 }
 
 @supports (padding: env(safe-area-inset-top)) {

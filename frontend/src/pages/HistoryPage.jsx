@@ -9,12 +9,12 @@ const PAGE_LIMIT = 10;
 // ── Skeletons ────────────────────────────────────────────────────────────────
 function Skeleton() {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 animate-pulse flex gap-4">
-      <div className="w-[90px] h-[127px] bg-slate-200 rounded-lg flex-shrink-0" />
+    <div className="rounded-xl border border-edge bg-surface p-4 animate-pulse flex gap-4">
+      <div className="w-[90px] h-[127px] bg-surface-3 rounded-lg flex-shrink-0" />
       <div className="flex-1 space-y-3 pt-1">
-        <div className="h-4 bg-slate-200 rounded w-1/3" />
-        <div className="h-4 bg-slate-100 rounded w-1/4" />
-        <div className="h-8 bg-slate-100 rounded w-1/2 mt-2" />
+        <div className="h-4 bg-surface-3 rounded w-1/3" />
+        <div className="h-4 bg-surface-2 rounded w-1/4" />
+        <div className="h-8 bg-surface-2 rounded w-1/2 mt-2" />
       </div>
     </div>
   );
@@ -34,7 +34,7 @@ function PdfThumbnail({ url }) {
   if (failed) {
     return (
       <div
-        className="flex-shrink-0 rounded-lg border border-slate-200 bg-slate-100 flex items-center justify-center text-3xl"
+        className="flex-shrink-0 rounded-lg border border-edge bg-surface-2 flex items-center justify-center text-3xl"
         style={{ width: 90, height: containerH }}
       >
         📄
@@ -44,11 +44,11 @@ function PdfThumbnail({ url }) {
 
   return (
     <div
-      className="flex-shrink-0 rounded-lg border border-slate-200 bg-white overflow-hidden relative"
+      className="flex-shrink-0 rounded-lg border border-edge bg-surface overflow-hidden relative"
       style={{ width: 90, height: containerH }}
     >
       {!loaded && (
-        <div className="absolute inset-0 flex items-center justify-center bg-slate-100 text-slate-400 text-xs animate-pulse">
+        <div className="absolute inset-0 flex items-center justify-center bg-surface-2 text-ink-faint text-xs animate-pulse">
           ...
         </div>
       )}
@@ -194,7 +194,7 @@ export default function HistoryPage() {
   if (initialLoading) {
     return (
       <div className="space-y-4">
-        <h1 className="text-xl sm:text-2xl font-bold text-slate-900">{t('history')}</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-ink">{t('history')}</h1>
         <div className="space-y-3">
           <Skeleton />
           <Skeleton />
@@ -207,8 +207,8 @@ export default function HistoryPage() {
   if (error) {
     return (
       <div className="space-y-4">
-        <h1 className="text-xl sm:text-2xl font-bold text-slate-900">{t('history')}</h1>
-        <p className="text-red-600">{error}</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-ink">{t('history')}</h1>
+        <p className="text-danger">{error}</p>
       </div>
     );
   }
@@ -217,18 +217,18 @@ export default function HistoryPage() {
     <div className="space-y-6">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">{t('history')}</h1>
-          <p className="mt-1 text-slate-500 text-sm sm:text-base">{t('historySubtitle')}</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-ink">{t('history')}</h1>
+          <p className="mt-1 text-ink-muted text-sm sm:text-base">{t('historySubtitle')}</p>
         </div>
         {pagination && (
-          <span className="text-xs text-slate-400 tabular-nums">
+          <span className="text-xs text-ink-faint tabular-nums">
             {items.length} / {pagination.total}
           </span>
         )}
       </div>
 
       {items.length === 0 ? (
-        <div className="rounded-xl sm:rounded-2xl border border-slate-200 bg-white p-8 sm:p-12 text-center text-slate-500 text-sm sm:text-base">
+        <div className="rounded-xl sm:rounded-2xl border border-edge bg-surface p-8 sm:p-12 text-center text-ink-muted text-sm sm:text-base shadow-card">
           {t('noResumesYet')}
         </div>
       ) : (
@@ -244,12 +244,12 @@ export default function HistoryPage() {
               return (
                 <li
                   key={item.id}
-                  className="rounded-xl border border-slate-200 bg-white p-4 flex gap-4 items-start shadow-sm"
+                  className="rounded-xl border border-edge bg-surface p-4 flex gap-4 items-start shadow-card"
                 >
                   <PdfThumbnail url={pdfUrl} />
 
                   <div className="flex-1 flex flex-col justify-between gap-3 min-w-0">
-                    <span className="text-slate-600 font-medium text-sm sm:text-base">
+                    <span className="text-ink-muted font-medium text-sm sm:text-base">
                       {formatDateTime(item.createdAt)}
                     </span>
 
@@ -258,17 +258,17 @@ export default function HistoryPage() {
                       <DownloadChip
                         url={pdfUrl}
                         label={t('downloadPdf')}
-                        colorClass="bg-red-50 text-red-700 hover:bg-red-100"
+                        colorClass="bg-danger-soft text-danger hover:opacity-90"
                       />
                       <DownloadChip
                         url={docxUrl}
                         label={t('downloadDocx')}
-                        colorClass="bg-blue-50 text-blue-700 hover:bg-blue-100"
+                        colorClass="bg-info-soft text-info hover:opacity-90"
                       />
                       <DownloadChip
                         url={xlsxUrl}
                         label={t('downloadXlsx')}
-                        colorClass="bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                        colorClass="bg-primary-soft text-primary hover:opacity-90"
                       />
                     </div>
 
@@ -278,10 +278,10 @@ export default function HistoryPage() {
                         type="button"
                         onClick={() => handleEdit(item)}
                         disabled={isEditing}
-                        className="inline-flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-200 disabled:opacity-60 transition"
+                        className="inline-flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-1.5 text-sm font-medium text-ink-muted hover:bg-surface-3 disabled:opacity-60 transition"
                       >
                         {isEditing && (
-                          <span className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-slate-400 border-t-transparent" />
+                          <span className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-ink-faint border-t-transparent" />
                         )}
                         {t('edit')}
                       </button>
@@ -299,11 +299,11 @@ export default function HistoryPage() {
                 type="button"
                 onClick={handleLoadMore}
                 disabled={loadingMore}
-                className="rounded-xl border border-slate-200 bg-white px-6 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-60 transition shadow-sm"
+                className="rounded-xl border border-edge bg-surface px-6 py-2.5 text-sm font-medium text-ink-muted hover:bg-surface-2 disabled:opacity-60 transition shadow-card"
               >
                 {loadingMore ? (
                   <span className="flex items-center gap-2">
-                    <span className="animate-spin rounded-full h-4 w-4 border-2 border-slate-400 border-t-transparent" />
+                    <span className="animate-spin rounded-full h-4 w-4 border-2 border-ink-faint border-t-transparent" />
                     {t('loading')}
                   </span>
                 ) : (
@@ -314,7 +314,7 @@ export default function HistoryPage() {
           )}
 
           {!pagination?.hasMore && items.length > 0 && (
-            <p className="text-center text-xs text-slate-400 pt-2">{t('allLoaded')}</p>
+            <p className="text-center text-xs text-ink-faint pt-2">{t('allLoaded')}</p>
           )}
         </>
       )}

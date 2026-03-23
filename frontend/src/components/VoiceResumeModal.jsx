@@ -32,7 +32,7 @@ const RECORD_LARGE_PREVIEW_IFRAME_H = 800;
 
 function AnimeGirlIllustrationSvg({ className }) {
   return (
-    <div className={`w-full flex items-center justify-center bg-gradient-to-b from-violet-50/80 to-fuchsia-50/80 ${className || ''}`} style={{ minHeight: 260 }}>
+    <div className={`w-full flex items-center justify-center bg-gradient-to-b from-voice-soft/50 to-voice-soft/30 ${className || ''}`} style={{ minHeight: 260 }}>
       <svg viewBox="0 0 200 260" className="w-full max-h-[260px] object-contain animate-float" style={{ minHeight: 220 }} aria-hidden>
         <defs>
           <linearGradient id="vg-hair" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#5c4033" /><stop offset="100%" stopColor="#3d2914" /></linearGradient>
@@ -431,32 +431,32 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
       <div className="flex flex-col gap-3 sm:gap-5 w-full min-w-0 px-0 sm:px-0 h-full min-h-0">
         {step === 'record' && (
           <>
-            <div className="rounded-xl border border-violet-100 overflow-hidden w-full min-w-0">
+            <div className="rounded-xl border border-voice-soft/50 overflow-hidden w-full min-w-0">
               <AnimeGirlIllustrationSvg className="rounded-t-xl" />
             </div>
-            <p className="text-center text-slate-700 text-xs sm:text-base px-1 sm:px-2 leading-relaxed">
+            <p className="text-center text-ink-muted text-xs sm:text-base px-1 sm:px-2 leading-relaxed">
               {t('voiceGreeting')}
             </p>
-            <div className="rounded-lg bg-slate-50 border border-slate-200 p-2.5 sm:p-4">
-              <p className="font-medium text-slate-800 text-xs sm:text-sm mb-1.5 sm:mb-2">{t('voiceQuestionsIntro')}</p>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-1.5 text-slate-600 text-xs sm:text-sm list-disc list-inside">
+            <div className="rounded-lg bg-surface-2 border border-edge p-2.5 sm:p-4">
+              <p className="font-medium text-ink text-xs sm:text-sm mb-1.5 sm:mb-2">{t('voiceQuestionsIntro')}</p>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-1.5 text-ink-muted text-xs sm:text-sm list-disc list-inside">
                 {VOICE_QUESTIONS.map((q) => (
                   <li key={q.id}>{t(q.key)}</li>
                 ))}
               </ul>
             </div>
-            <p className="text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm">
+            <p className="text-warning bg-warning-soft border border-warning/40 rounded-lg px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm">
               {t('voiceRecordMinSeconds')}
             </p>
-            <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4 space-y-2">
-              <p className="text-sm font-medium text-slate-800">{t('voiceChooseLayout')}</p>
-              <p className="text-xs text-slate-500">{t('voiceLayoutPreviewHint')}</p>
+            <div className="rounded-xl border border-edge bg-surface p-3 sm:p-4 space-y-2">
+              <p className="text-sm font-medium text-ink">{t('voiceChooseLayout')}</p>
+              <p className="text-xs text-ink-muted">{t('voiceLayoutPreviewHint')}</p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {VOICE_LAYOUT_OPTIONS.map((opt) => (
                   <label
                     key={opt.id}
                     className={`flex flex-col gap-2 rounded-lg border-2 p-2 cursor-pointer transition ${
-                      voiceLayout === opt.id ? 'border-violet-500 bg-violet-50/60' : 'border-slate-200 hover:border-slate-300'
+                      voiceLayout === opt.id ? 'border-voice bg-voice-soft/40' : 'border-edge hover:border-surface-3'
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -465,12 +465,12 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
                         name="voiceLayout"
                         checked={voiceLayout === opt.id}
                         onChange={() => handleLayoutPick(opt.id)}
-                        className="accent-violet-600"
+                        className="accent-voice"
                       />
-                      <span className="text-xs font-semibold text-slate-800">{t(opt.nameKey)}</span>
+                      <span className="text-xs font-semibold text-ink">{t(opt.nameKey)}</span>
                     </div>
                     <div
-                      className="w-full rounded-md border border-slate-200 bg-slate-50 overflow-hidden"
+                      className="w-full rounded-md border border-edge bg-surface-2 overflow-hidden"
                       style={{ height: 150 }}
                     >
                       {layoutDemos?.[opt.id] ? (
@@ -482,17 +482,17 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
                           sandbox="allow-same-origin"
                         />
                       ) : (
-                        <div className="flex h-full items-center justify-center text-xs text-slate-400">…</div>
+                        <div className="flex h-full items-center justify-center text-xs text-ink-faint">…</div>
                       )}
                     </div>
                   </label>
                 ))}
               </div>
-              <div className="mt-4 pt-4 border-t border-slate-200">
-                <p className="text-sm font-medium text-slate-800 mb-2">{t('voiceLayoutLargePreviewTitle')}</p>
-                <p className="text-xs text-slate-500 mb-2">{t('voiceLayoutLargePreviewHint')}</p>
+              <div className="mt-4 pt-4 border-t border-edge">
+                <p className="text-sm font-medium text-ink mb-2">{t('voiceLayoutLargePreviewTitle')}</p>
+                <p className="text-xs text-ink-muted mb-2">{t('voiceLayoutLargePreviewHint')}</p>
                 <div
-                  className="w-full rounded-lg border border-slate-300 bg-slate-100 overflow-hidden shadow-inner"
+                  className="w-full rounded-lg border border-edge bg-surface-2 overflow-hidden shadow-inner"
                   style={{ height: RECORD_LARGE_PREVIEW_WRAP_H }}
                 >
                   {layoutDemos?.[voiceLayout] ? (
@@ -509,32 +509,32 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
                       sandbox="allow-same-origin"
                     />
                   ) : (
-                    <div className="flex h-full min-h-[280px] items-center justify-center text-sm text-slate-400">…</div>
+                    <div className="flex h-full min-h-[280px] items-center justify-center text-sm text-ink-faint">…</div>
                   )}
                 </div>
               </div>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+            <div className="rounded-xl border border-edge bg-surface p-3 sm:p-4">
+              <label className="block text-sm font-medium text-ink-muted mb-2">
                 {t('voiceMicSelect')}
               </label>
               <select
                 value={selectedMicId}
                 onChange={(e) => setSelectedMicId(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
+                className="w-full rounded-xl border border-edge bg-surface text-ink px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-voice"
               >
                 <option value="default">{t('voiceMicDefault')}</option>
                 {microphones.map((mic, idx) => (
-                  <option key={mic.deviceId || `${idx}`} value={mic.deviceId}>
+                  <option key={mic.deviceId || `${idx}`} value={mic.deviceId} className="bg-surface text-ink">
                     {mic.label || `${t('voiceMicDevice')} ${idx + 1}`}
                   </option>
                 ))}
               </select>
             </div>
-            <div className="w-full rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
+            <div className="w-full rounded-xl border border-edge bg-surface p-3 sm:p-4">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-medium text-slate-800">{t('profilePhoto')}</p>
-                <span className="text-xs text-slate-400">(40 × 50 mm 推奨)</span>
+                <p className="text-sm font-medium text-ink">{t('profilePhoto')}</p>
+                <span className="text-xs text-ink-faint">(40 ÁE50 mm 推奨)</span>
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-3">
                 {avatarPreviewUrl ? (
@@ -542,7 +542,7 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
                     <img
                       src={avatarPreviewUrl}
                       alt=""
-                      className="h-20 w-16 rounded-lg border border-slate-200 object-cover shadow-sm"
+                      className="h-20 w-16 rounded-lg border border-edge object-cover shadow-sm"
                       style={{ aspectRatio: '4/5' }}
                     />
                     <button
@@ -555,7 +555,7 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
                     </button>
                   </div>
                 ) : (
-                  <div className="flex-shrink-0 h-20 w-16 rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center text-slate-300 text-[11px]">
+                  <div className="flex-shrink-0 h-20 w-16 rounded-lg border-2 border-dashed border-edge bg-surface-2 flex flex-col items-center justify-center text-ink-faint text-[11px]">
                     写真
                   </div>
                 )}
@@ -569,18 +569,18 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
                   />
                   <label
                     htmlFor="voice-avatar-upload"
-                    className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-100 transition"
+                    className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-edge bg-primary-soft px-4 py-2 text-sm font-medium text-primary hover:bg-primary-soft transition"
                   >
                     {t('chooseFile')}
                   </label>
-                  <p className="mt-1 text-xs text-slate-400">
+                  <p className="mt-1 text-xs text-ink-faint">
                     {avatarFile ? avatarFile.name : t('noFileChosen')}
                   </p>
                 </div>
               </div>
             </div>
             {micError && (
-              <p className="text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm">
+              <p className="text-danger bg-danger-soft border border-danger/30 rounded-lg px-3 py-2 text-sm">
                 {micError === 'denied' ? t('voiceMicDenied') : t('voiceMicUnavailable')}
               </p>
             )}
@@ -591,7 +591,7 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
                     <button
                       type="button"
                       onClick={startRecording}
-                      className="flex items-center justify-center gap-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-medium shadow-lg shadow-violet-500/30 transition touch-manipulation w-full sm:w-auto max-w-xs"
+                      className="flex items-center justify-center gap-2 rounded-xl bg-voice hover:opacity-90 text-white px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-medium shadow-lg shadow-lg transition touch-manipulation w-full sm:w-auto max-w-xs"
                     >
                       <span className="w-3 h-3 rounded-full bg-white animate-pulse" />
                       {t('voiceRecord')}
@@ -606,40 +606,40 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
                       {t('voiceStop')}
                     </button>
                   )}
-                  <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white px-3 py-2">
+                  <div className="w-full max-w-md rounded-xl border border-edge bg-surface px-3 py-2">
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-xs text-slate-500 truncate">
+                      <p className="text-xs text-ink-muted truncate">
                         {micLabel ? `Mic: ${micLabel}` : 'Mic: —'}
                       </p>
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-ink-faint">
                         {recordedMimeRef.current ? recordedMimeRef.current : ''}
                       </p>
                     </div>
-                    <div className="mt-2 h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                    <div className="mt-2 h-2.5 w-full rounded-full bg-surface-2 overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-violet-500 to-fuchsia-500 transition-[width] duration-75"
+                        className="h-full rounded-full bg-gradient-to-r from-primary via-voice to-voice-soft transition-[width] duration-75"
                         style={{ width: `${Math.round(micLevel * 100)}%` }}
                         aria-hidden
                       />
                     </div>
-                    <p className="mt-1 text-[11px] text-slate-400">
+                    <p className="mt-1 text-[11px] text-ink-faint">
                       Level: {Math.round(micLevel * 100)}%
                     </p>
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="w-full rounded-xl bg-slate-100 border border-slate-200 p-2 sm:p-3">
+                  <div className="w-full rounded-xl bg-surface-2 border border-edge p-2 sm:p-3 dark:bg-surface">
                     <audio
                       ref={audioRef}
                       src={audioUrl || ''}
                       controls
-                      className="w-full h-9 sm:h-10 accent-violet-600"
+                      className="w-full h-9 sm:h-10 accent-voice"
                       style={{ maxHeight: 48 }}
                     />
                   </div>
                   {audioDebug ? (
-                    <div className="w-full max-w-md text-xs text-slate-500">
+                    <div className="w-full max-w-md text-xs text-ink-muted">
                       Recorded: {Math.round(audioDebug.bytes / 1024)} KB · chunks: {audioDebug.chunks} · {audioDebug.mime}
                     </div>
                   ) : null}
@@ -656,7 +656,7 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
                         setAudioUrl(null);
                         setPlaying(false);
                       }}
-                      className="rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition touch-manipulation"
+                      className="rounded-xl bg-warning-soft hover:opacity-90 text-on-warning px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition touch-manipulation"
                     >
                       {t('voiceRecordAgain')}
                     </button>
@@ -664,7 +664,7 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
                       type="button"
                       onClick={handleGenerate}
                       disabled={generating}
-                      className="rounded-xl bg-violet-600 hover:bg-violet-700 text-white px-3 sm:px-5 py-2 text-xs sm:text-sm font-medium shadow-md disabled:opacity-70 transition touch-manipulation"
+                      className="rounded-xl bg-voice hover:opacity-90 text-white px-3 sm:px-5 py-2 text-xs sm:text-sm font-medium shadow-md disabled:opacity-70 transition touch-manipulation"
                     >
                       {generating ? t('voiceGenerating') : t('voiceGenerate')}
                     </button>
@@ -677,58 +677,19 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
 
         {step === 'preview' && (
           <div className="flex flex-col gap-3 min-h-0 flex-1">
-            <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4 space-y-2 shrink-0">
-              <p className="text-sm font-medium text-slate-800">{t('voiceChooseLayout')}</p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                {VOICE_LAYOUT_OPTIONS.map((opt) => (
-                  <label
-                    key={opt.id}
-                    className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2 cursor-pointer text-xs font-medium ${
-                      voiceLayout === opt.id ? 'border-violet-500 bg-violet-50' : 'border-slate-200'
-                    } ${updatingPreview ? 'opacity-60 pointer-events-none' : ''}`}
-                  >
-                    <input
-                      type="radio"
-                      name="voiceLayoutPreview"
-                      checked={voiceLayout === opt.id}
-                      onChange={() => handleLayoutPick(opt.id)}
-                      className="accent-violet-600"
-                    />
-                    {t(opt.nameKey)}
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div className="rounded-xl border border-violet-200 bg-violet-50/80 p-3 sm:p-4 max-h-[140px] overflow-auto">
-              <p className="text-xs sm:text-sm font-medium text-violet-800 mb-1.5 sm:mb-2">{t('voiceWhatYouSaid')}</p>
+            <div className="rounded-xl border border-edge bg-voice-soft/80 dark:bg-surface-2 p-3 sm:p-4 max-h-[140px] overflow-auto">
+              <p className="text-xs sm:text-sm font-medium text-voice mb-1.5 sm:mb-2">{t('voiceWhatYouSaid')}</p>
               {transcript ? (
-                <p className="text-slate-700 text-sm sm:text-base leading-relaxed whitespace-pre-wrap break-words">{transcript}</p>
+                <p className="text-ink text-sm sm:text-base leading-relaxed whitespace-pre-wrap break-words">{transcript}</p>
               ) : (
-                <p className="text-slate-500 text-sm italic">{t('voiceTranscriptUnavailable')}</p>
+                <p className="text-ink-muted text-sm italic">{t('voiceTranscriptUnavailable')}</p>
               )}
             </div>
-            <div
-              className="rounded-lg border border-slate-200 bg-white overflow-auto shrink-0"
-              style={{ height: '48vh', minHeight: 320 }}
-            >
-              {previewHtml ? (
-                <iframe
-                  srcDoc={previewHtml}
-                  title="Resume preview"
-                  className="w-full h-full border-0 block"
-                  sandbox="allow-same-origin"
-                />
-              ) : (
-                <div className="flex items-center justify-center min-h-[320px] text-slate-500 p-4">
-                  {t('preview')}
-                </div>
-              )}
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-2 sm:p-3 shrink-0 space-y-2">
-              <p className="text-sm font-medium text-slate-800">{t('voicePreviewLargeBottom')}</p>
-              <p className="text-xs text-slate-500">{t('voicePreviewLargeBottomHint')}</p>
+            <div className="rounded-xl border border-edge bg-surface-2 p-2 sm:p-3 shrink-0 space-y-2">
+              <p className="text-sm font-medium text-ink">{t('voicePreviewLargeBottom')}</p>
+              <p className="text-xs text-ink-muted">{t('voicePreviewLargeBottomHint')}</p>
               <div
-                className="rounded-lg border border-slate-300 bg-white overflow-auto"
+                className="rounded-lg border border-edge bg-surface overflow-auto"
                 style={{ height: 'min(58vh, 720px)', minHeight: 400 }}
               >
                 {previewHtml ? (
@@ -739,7 +700,7 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
                     sandbox="allow-same-origin"
                   />
                 ) : (
-                  <div className="flex items-center justify-center min-h-[320px] text-slate-500 p-4">
+                  <div className="flex items-center justify-center min-h-[320px] text-ink-muted p-4">
                     {t('preview')}
                   </div>
                 )}
@@ -749,7 +710,7 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
               <button
                 type="button"
                 onClick={() => setShowTextEdit((v) => !v)}
-                className="rounded-xl bg-white border border-violet-200 hover:bg-violet-50 text-violet-700 px-5 py-2.5 font-medium transition touch-manipulation"
+                className="rounded-xl bg-surface border border-voice-soft/60 hover:bg-voice-soft text-voice px-5 py-2.5 font-medium transition touch-manipulation"
               >
                 {t('voiceEditByText')}
               </button>
@@ -757,27 +718,27 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
                 type="button"
                 onClick={handleSave}
                 disabled={!voiceResult || saving}
-                className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 font-medium disabled:opacity-50 transition touch-manipulation"
+                className="rounded-xl bg-primary hover:opacity-90 text-on-primary px-5 py-2.5 font-medium disabled:opacity-50 transition touch-manipulation"
               >
                 {saving ? t('voiceSaving') : t('voiceSave')}
               </button>
               <button
                 type="button"
                 onClick={handleRegenerate}
-                className="rounded-xl bg-violet-600 hover:bg-violet-700 text-white px-5 py-2.5 font-medium transition touch-manipulation"
+                className="rounded-xl bg-voice hover:opacity-90 text-white px-5 py-2.5 font-medium transition touch-manipulation"
               >
                 {t('voiceRegenerate')}
               </button>
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 px-5 py-2.5 font-medium transition touch-manipulation"
+                className="rounded-xl bg-surface-2 hover:bg-surface-3 text-ink px-5 py-2.5 font-medium transition touch-manipulation"
               >
                 {t('voiceClose')}
               </button>
             </div>
             {showTextEdit && voiceResult?.schema ? (
-              <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4 space-y-3">
+              <div className="rounded-xl border border-edge bg-surface p-3 sm:p-4 space-y-3">
                 <DynamicForm
                   schema={voiceResult.schema}
                   formData={editingFormData}
@@ -788,7 +749,7 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
                   type="button"
                   onClick={handleApplyTextEdits}
                   disabled={updatingPreview}
-                  className="w-full rounded-xl bg-violet-600 hover:bg-violet-700 text-white px-5 py-2.5 font-medium disabled:opacity-60 transition"
+                  className="w-full rounded-xl bg-voice hover:opacity-90 text-white px-5 py-2.5 font-medium disabled:opacity-60 transition"
                 >
                   {updatingPreview ? t('voiceUpdatingPreview') : t('voiceApplyTextEdits')}
                 </button>

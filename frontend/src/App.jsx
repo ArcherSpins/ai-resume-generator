@@ -11,7 +11,7 @@ function ProtectedRoute({ children }) {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse rounded-full h-12 w-12 bg-slate-300" />
+        <div className="animate-pulse rounded-full h-12 w-12 bg-surface-3" />
       </div>
     );
   }
@@ -24,7 +24,7 @@ function PublicOnly({ children }) {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse rounded-full h-12 w-12 bg-slate-300" />
+        <div className="animate-pulse rounded-full h-12 w-12 bg-surface-3" />
       </div>
     );
   }
