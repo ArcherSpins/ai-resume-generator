@@ -2,7 +2,13 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import Modal from './Modal';
 import DynamicForm from './DynamicForm';
 import { useTranslation } from '../i18n/LanguageContext';
-import { api } from '../services/api';
+import { api, getAuthToken } from '../services/api';
+
+const VOICE_LAYOUT_OPTIONS = [
+  { id: 'classic', nameKey: 'voiceLayoutClassic' },
+  { id: 'modern', nameKey: 'voiceLayoutModern' },
+  { id: 'official', nameKey: 'voiceLayoutOfficial' },
+];
 
 const VOICE_QUESTIONS = [
   { id: 'name', key: 'field_name' },
@@ -14,12 +20,20 @@ const VOICE_QUESTIONS = [
   { id: 'experience', key: 'field_experience' },
   { id: 'licenses', key: 'field_licenses' },
   { id: 'self_pr', key: 'field_self_pr' },
+  { id: 'strength_points', key: 'field_strength_points' },
+  { id: 'weakness_points', key: 'field_weakness_points' },
+  { id: 'research_learning', key: 'field_research_learning' },
 ];
+
+/** Outer box height for large template demo preview on record step */
+const RECORD_LARGE_PREVIEW_WRAP_H = 440;
+/** Inner iframe content height before CSS scale (A4-ish) */
+const RECORD_LARGE_PREVIEW_IFRAME_H = 800;
 
 function AnimeGirlIllustrationSvg({ className }) {
   return (
-    <div className={`w-full flex items-center justify-center bg-gradient-to-b from-violet-50/80 to-fuchsia-50/80 ${className || ''}`} style={{ minHeight: 260 }}>
-      <svg viewBox="0 0 200 260" className="w-full max-h-[260px] object-contain" style={{ minHeight: 220 }} aria-hidden>
+    <div className={`w-full flex items-center justify-center bg-gradient-to-b from-voice-soft/50 to-voice-soft/30 ${className || ''}`} style={{ minHeight: 260 }}>
+      <svg viewBox="0 0 200 260" className="w-full max-h-[260px] object-contain animate-float" style={{ minHeight: 220 }} aria-hidden>
         <defs>
           <linearGradient id="vg-hair" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#5c4033" /><stop offset="100%" stopColor="#3d2914" /></linearGradient>
           <linearGradient id="vg-skin" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#ffecd2" /><stop offset="100%" stopColor="#fcb69f" /></linearGradient>
@@ -41,41 +55,7 @@ function AnimeGirlIllustrationSvg({ className }) {
           <ellipse cx="155" cy="148" rx="14" ry="18" fill="url(#vg-skin)" /><ellipse cx="158" cy="145" rx="6" ry="7" fill="url(#vg-skin)" />
         </g>
       </svg>
-      <style>{`@keyframes voiceWave { 0%, 100% { transform: rotate(-10deg); } 50% { transform: rotate(14deg); } }`}</style>
-    </div>
-  );
-}
-
-const ANIME_GIRL_FRAMES = [
-  'https://cdn.pixabay.com/photo/2018/05/24/14/53/anime-3425879_960_720.png',
-  'https://cdn.pixabay.com/photo/2018/05/24/14/54/anime-3425881_960_720.png',
-  'https://cdn.pixabay.com/photo/2018/05/24/14/54/anime-3425882_960_720.png',
-];
-
-function AnimeGirlIllustration({ className }) {
-  const [frame, setFrame] = useState(0);
-  const [imgError, setImgError] = useState(false);
-  useEffect(() => {
-    if (ANIME_GIRL_FRAMES.length <= 1) return;
-    const id = setInterval(() => setFrame((f) => (f + 1) % ANIME_GIRL_FRAMES.length), 450);
-    return () => clearInterval(id);
-  }, []);
-  const src = ANIME_GIRL_FRAMES[frame] ?? ANIME_GIRL_FRAMES[0];
-  return (
-    <div className={`w-full flex items-center justify-center bg-gradient-to-b from-violet-50/80 to-fuchsia-50/80 ${className || ''}`} style={{ minHeight: 260 }}>
-      {!imgError ? (
-        <img
-          src={src}
-          alt=""
-          className="max-h-[260px] w-auto object-contain animate-float"
-          style={{ minHeight: 200 }}
-          aria-hidden
-          onError={() => setImgError(true)}
-        />
-      ) : (
-        <AnimeGirlIllustrationSvg />
-      )}
-      <style>{`@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } } .animate-float { animation: float 2.5s ease-in-out infinite; }`}</style>
+      <style>{`@keyframes voiceWave { 0%, 100% { transform: rotate(-10deg); } 50% { transform: rotate(14deg); } } @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } } .animate-float { animation: float 2.5s ease-in-out infinite; }`}</style>
     </div>
   );
 }
@@ -104,6 +84,8 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
   const [microphones, setMicrophones] = useState([]);
   const [selectedMicId, setSelectedMicId] = useState('default');
   const [audioDebug, setAudioDebug] = useState(null);
+  const [voiceLayout, setVoiceLayout] = useState('classic');
+  const [layoutDemos, setLayoutDemos] = useState(null);
 
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
@@ -184,7 +166,49 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
     setEditingFormData({});
     setUpdatingPreview(false);
     setTranscript('');
+    setVoiceLayout('classic');
   }, [audioUrl, stopMeter]);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    api
+      .getVoiceLayoutDemos()
+      .then((r) => {
+        if (!cancelled && r?.demos) setLayoutDemos(r.demos);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
+
+  const handleLayoutPick = async (id) => {
+    if (id === voiceLayout) return;
+    setVoiceLayout(id);
+    if (step !== 'preview' || !voiceResult?.formData) return;
+    setUpdatingPreview(true);
+    try {
+      const merged = {
+        ...voiceResult.formData,
+        avatarBase64: voiceResult.formData.avatarBase64 || avatarBase64 || undefined,
+      };
+      const res = await api.generateVoicePreview(merged, merged.avatarBase64, id);
+      setPreviewHtml(res.previewHtml || previewHtml);
+      setVoiceResult({
+        schema: {
+          ...voiceResult.schema,
+          voiceHtmlLayout: id,
+          annotatedTemplateHtml: res.previewHtml,
+        },
+        formData: merged,
+      });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUpdatingPreview(false);
+    }
+  };
 
   const buildCompleteFormData = useCallback((schema, current) => {
     const base = { ...(current || {}) };
@@ -324,11 +348,14 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
       const mime = recordedMimeRef.current || 'audio/webm';
       const ext = mime.includes('mp4') || mime.includes('m4a') ? 'm4a' : 'webm';
       form.append('audio', audioBlob, `recording.${ext}`);
+      form.append('voiceLayout', voiceLayout);
       if (avatarFile) form.append('avatar', avatarFile, avatarFile.name || 'avatar.png');
       const base = import.meta.env.VITE_API_URL || '';
+      const token = getAuthToken();
       const res = await fetch(`${base}/voice-to-resume`, {
         method: 'POST',
         credentials: 'include',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         body: form,
       });
       if (!res.ok) {
@@ -336,6 +363,7 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
         throw new Error(err.error || res.statusText);
       }
       const data = await res.json();
+      if (data.voiceHtmlLayout) setVoiceLayout(data.voiceHtmlLayout);
       setPreviewHtml(data.previewHtml || '');
       const mergedFormData = { ...(data.formData || {}) };
       if (avatarBase64 && !mergedFormData.avatarBase64) mergedFormData.avatarBase64 = avatarBase64;
@@ -370,7 +398,7 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
         ...(editingFormData || {}),
         avatarBase64: editingFormData?.avatarBase64 || avatarBase64 || voiceResult?.formData?.avatarBase64,
       };
-      const res = await api.generateVoicePreview(merged, merged.avatarBase64);
+      const res = await api.generateVoicePreview(merged, merged.avatarBase64, voiceLayout);
       setPreviewHtml(res?.previewHtml || previewHtml);
       setVoiceResult({ schema: voiceResult.schema, formData: merged });
       setShowTextEdit(false);
@@ -403,44 +431,110 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
       <div className="flex flex-col gap-3 sm:gap-5 w-full min-w-0 px-0 sm:px-0 h-full min-h-0">
         {step === 'record' && (
           <>
-            <div className="rounded-xl border border-violet-100 overflow-hidden w-full min-w-0">
-              <AnimeGirlIllustration className="rounded-t-xl" />
+            <div className="rounded-xl border border-voice-soft/50 overflow-hidden w-full min-w-0">
+              <AnimeGirlIllustrationSvg className="rounded-t-xl" />
             </div>
-            <p className="text-center text-slate-700 text-xs sm:text-base px-1 sm:px-2 leading-relaxed">
+            <p className="text-center text-ink-muted text-xs sm:text-base px-1 sm:px-2 leading-relaxed">
               {t('voiceGreeting')}
             </p>
-            <div className="rounded-lg bg-slate-50 border border-slate-200 p-2.5 sm:p-4">
-              <p className="font-medium text-slate-800 text-xs sm:text-sm mb-1.5 sm:mb-2">{t('voiceQuestionsIntro')}</p>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-1.5 text-slate-600 text-xs sm:text-sm list-disc list-inside">
+            <div className="rounded-lg bg-surface-2 border border-edge p-2.5 sm:p-4">
+              <p className="font-medium text-ink text-xs sm:text-sm mb-1.5 sm:mb-2">{t('voiceQuestionsIntro')}</p>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-1.5 text-ink-muted text-xs sm:text-sm list-disc list-inside">
                 {VOICE_QUESTIONS.map((q) => (
                   <li key={q.id}>{t(q.key)}</li>
                 ))}
               </ul>
             </div>
-            <p className="text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm">
+            <p className="text-warning bg-warning-soft border border-warning/40 rounded-lg px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm">
               {t('voiceRecordMinSeconds')}
             </p>
-            <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+            <div className="rounded-xl border border-edge bg-surface p-3 sm:p-4 space-y-2">
+              <p className="text-sm font-medium text-ink">{t('voiceChooseLayout')}</p>
+              <p className="text-xs text-ink-muted">{t('voiceLayoutPreviewHint')}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {VOICE_LAYOUT_OPTIONS.map((opt) => (
+                  <label
+                    key={opt.id}
+                    className={`flex flex-col gap-2 rounded-lg border-2 p-2 cursor-pointer transition ${
+                      voiceLayout === opt.id ? 'border-voice bg-voice-soft/40' : 'border-edge hover:border-surface-3'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="voiceLayout"
+                        checked={voiceLayout === opt.id}
+                        onChange={() => handleLayoutPick(opt.id)}
+                        className="accent-voice"
+                      />
+                      <span className="text-xs font-semibold text-ink">{t(opt.nameKey)}</span>
+                    </div>
+                    <div
+                      className="w-full rounded-md border border-edge bg-surface-2 overflow-hidden"
+                      style={{ height: 150 }}
+                    >
+                      {layoutDemos?.[opt.id] ? (
+                        <iframe
+                          title=""
+                          srcDoc={layoutDemos[opt.id]}
+                          className="w-full border-0 bg-white"
+                          style={{ height: 400, transform: 'scale(0.35)', transformOrigin: 'top left', width: '285%' }}
+                          sandbox="allow-same-origin"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-xs text-ink-faint">…</div>
+                      )}
+                    </div>
+                  </label>
+                ))}
+              </div>
+              <div className="mt-4 pt-4 border-t border-edge">
+                <p className="text-sm font-medium text-ink mb-2">{t('voiceLayoutLargePreviewTitle')}</p>
+                <p className="text-xs text-ink-muted mb-2">{t('voiceLayoutLargePreviewHint')}</p>
+                <div
+                  className="w-full rounded-lg border border-edge bg-surface-2 overflow-hidden shadow-inner"
+                  style={{ height: RECORD_LARGE_PREVIEW_WRAP_H }}
+                >
+                  {layoutDemos?.[voiceLayout] ? (
+                    <iframe
+                      title={t('voiceLayoutLargePreviewTitle')}
+                      srcDoc={layoutDemos[voiceLayout]}
+                      className="w-full border-0 bg-white block"
+                      style={{
+                        height: RECORD_LARGE_PREVIEW_IFRAME_H,
+                        transform: 'scale(0.52)',
+                        transformOrigin: 'top left',
+                        width: '192.3%',
+                      }}
+                      sandbox="allow-same-origin"
+                    />
+                  ) : (
+                    <div className="flex h-full min-h-[280px] items-center justify-center text-sm text-ink-faint">…</div>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="rounded-xl border border-edge bg-surface p-3 sm:p-4">
+              <label className="block text-sm font-medium text-ink-muted mb-2">
                 {t('voiceMicSelect')}
               </label>
               <select
                 value={selectedMicId}
                 onChange={(e) => setSelectedMicId(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
+                className="w-full rounded-xl border border-edge bg-surface text-ink px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-voice"
               >
                 <option value="default">{t('voiceMicDefault')}</option>
                 {microphones.map((mic, idx) => (
-                  <option key={mic.deviceId || `${idx}`} value={mic.deviceId}>
+                  <option key={mic.deviceId || `${idx}`} value={mic.deviceId} className="bg-surface text-ink">
                     {mic.label || `${t('voiceMicDevice')} ${idx + 1}`}
                   </option>
                 ))}
               </select>
             </div>
-            <div className="w-full rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
+            <div className="w-full rounded-xl border border-edge bg-surface p-3 sm:p-4">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-medium text-slate-800">{t('profilePhoto')}</p>
-                <span className="text-xs text-slate-400">(40 × 50 mm 推奨)</span>
+                <p className="text-sm font-medium text-ink">{t('profilePhoto')}</p>
+                <span className="text-xs text-ink-faint">(40 ÁE50 mm 推奨)</span>
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-3">
                 {avatarPreviewUrl ? (
@@ -448,7 +542,7 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
                     <img
                       src={avatarPreviewUrl}
                       alt=""
-                      className="h-20 w-16 rounded-lg border border-slate-200 object-cover shadow-sm"
+                      className="h-20 w-16 rounded-lg border border-edge object-cover shadow-sm"
                       style={{ aspectRatio: '4/5' }}
                     />
                     <button
@@ -461,7 +555,7 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
                     </button>
                   </div>
                 ) : (
-                  <div className="flex-shrink-0 h-20 w-16 rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center text-slate-300 text-[11px]">
+                  <div className="flex-shrink-0 h-20 w-16 rounded-lg border-2 border-dashed border-edge bg-surface-2 flex flex-col items-center justify-center text-ink-faint text-[11px]">
                     写真
                   </div>
                 )}
@@ -475,18 +569,18 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
                   />
                   <label
                     htmlFor="voice-avatar-upload"
-                    className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-100 transition"
+                    className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-edge bg-primary-soft px-4 py-2 text-sm font-medium text-primary hover:bg-primary-soft transition"
                   >
                     {t('chooseFile')}
                   </label>
-                  <p className="mt-1 text-xs text-slate-400">
+                  <p className="mt-1 text-xs text-ink-faint">
                     {avatarFile ? avatarFile.name : t('noFileChosen')}
                   </p>
                 </div>
               </div>
             </div>
             {micError && (
-              <p className="text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm">
+              <p className="text-danger bg-danger-soft border border-danger/30 rounded-lg px-3 py-2 text-sm">
                 {micError === 'denied' ? t('voiceMicDenied') : t('voiceMicUnavailable')}
               </p>
             )}
@@ -497,7 +591,7 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
                     <button
                       type="button"
                       onClick={startRecording}
-                      className="flex items-center justify-center gap-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-medium shadow-lg shadow-violet-500/30 transition touch-manipulation w-full sm:w-auto max-w-xs"
+                      className="flex items-center justify-center gap-2 rounded-xl bg-voice hover:opacity-90 text-white px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-medium shadow-lg shadow-lg transition touch-manipulation w-full sm:w-auto max-w-xs"
                     >
                       <span className="w-3 h-3 rounded-full bg-white animate-pulse" />
                       {t('voiceRecord')}
@@ -512,40 +606,40 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
                       {t('voiceStop')}
                     </button>
                   )}
-                  <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white px-3 py-2">
+                  <div className="w-full max-w-md rounded-xl border border-edge bg-surface px-3 py-2">
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-xs text-slate-500 truncate">
+                      <p className="text-xs text-ink-muted truncate">
                         {micLabel ? `Mic: ${micLabel}` : 'Mic: —'}
                       </p>
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-ink-faint">
                         {recordedMimeRef.current ? recordedMimeRef.current : ''}
                       </p>
                     </div>
-                    <div className="mt-2 h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                    <div className="mt-2 h-2.5 w-full rounded-full bg-surface-2 overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-violet-500 to-fuchsia-500 transition-[width] duration-75"
+                        className="h-full rounded-full bg-gradient-to-r from-primary via-voice to-voice-soft transition-[width] duration-75"
                         style={{ width: `${Math.round(micLevel * 100)}%` }}
                         aria-hidden
                       />
                     </div>
-                    <p className="mt-1 text-[11px] text-slate-400">
+                    <p className="mt-1 text-[11px] text-ink-faint">
                       Level: {Math.round(micLevel * 100)}%
                     </p>
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="w-full rounded-xl bg-slate-100 border border-slate-200 p-2 sm:p-3">
+                  <div className="w-full rounded-xl bg-surface-2 border border-edge p-2 sm:p-3 dark:bg-surface">
                     <audio
                       ref={audioRef}
                       src={audioUrl || ''}
                       controls
-                      className="w-full h-9 sm:h-10 accent-violet-600"
+                      className="w-full h-9 sm:h-10 accent-voice"
                       style={{ maxHeight: 48 }}
                     />
                   </div>
                   {audioDebug ? (
-                    <div className="w-full max-w-md text-xs text-slate-500">
+                    <div className="w-full max-w-md text-xs text-ink-muted">
                       Recorded: {Math.round(audioDebug.bytes / 1024)} KB · chunks: {audioDebug.chunks} · {audioDebug.mime}
                     </div>
                   ) : null}
@@ -562,7 +656,7 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
                         setAudioUrl(null);
                         setPlaying(false);
                       }}
-                      className="rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition touch-manipulation"
+                      className="rounded-xl bg-warning-soft hover:opacity-90 text-on-warning px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition touch-manipulation"
                     >
                       {t('voiceRecordAgain')}
                     </button>
@@ -570,7 +664,7 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
                       type="button"
                       onClick={handleGenerate}
                       disabled={generating}
-                      className="rounded-xl bg-violet-600 hover:bg-violet-700 text-white px-3 sm:px-5 py-2 text-xs sm:text-sm font-medium shadow-md disabled:opacity-70 transition touch-manipulation"
+                      className="rounded-xl bg-voice hover:opacity-90 text-white px-3 sm:px-5 py-2 text-xs sm:text-sm font-medium shadow-md disabled:opacity-70 transition touch-manipulation"
                     >
                       {generating ? t('voiceGenerating') : t('voiceGenerate')}
                     </button>
@@ -583,36 +677,40 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
 
         {step === 'preview' && (
           <div className="flex flex-col gap-3 min-h-0 flex-1">
-            <div className="rounded-xl border border-violet-200 bg-violet-50/80 p-3 sm:p-4 max-h-[140px] overflow-auto">
-              <p className="text-xs sm:text-sm font-medium text-violet-800 mb-1.5 sm:mb-2">{t('voiceWhatYouSaid')}</p>
+            <div className="rounded-xl border border-edge bg-voice-soft/80 dark:bg-surface-2 p-3 sm:p-4 max-h-[140px] overflow-auto">
+              <p className="text-xs sm:text-sm font-medium text-voice mb-1.5 sm:mb-2">{t('voiceWhatYouSaid')}</p>
               {transcript ? (
-                <p className="text-slate-700 text-sm sm:text-base leading-relaxed whitespace-pre-wrap break-words">{transcript}</p>
+                <p className="text-ink text-sm sm:text-base leading-relaxed whitespace-pre-wrap break-words">{transcript}</p>
               ) : (
-                <p className="text-slate-500 text-sm italic">{t('voiceTranscriptUnavailable')}</p>
+                <p className="text-ink-muted text-sm italic">{t('voiceTranscriptUnavailable')}</p>
               )}
             </div>
-            <div
-              className="rounded-lg border border-slate-200 bg-white overflow-auto shrink-0"
-              style={{ height: '70vh', minHeight: 480 }}
-            >
-              {previewHtml ? (
-                <iframe
-                  srcDoc={previewHtml}
-                  title="Resume preview"
-                  className="w-full h-full border-0 block"
-                  sandbox="allow-same-origin"
-                />
-              ) : (
-                <div className="flex items-center justify-center min-h-[320px] text-slate-500 p-4">
-                  {t('preview')}
-                </div>
-              )}
+            <div className="rounded-xl border border-edge bg-surface-2 p-2 sm:p-3 shrink-0 space-y-2">
+              <p className="text-sm font-medium text-ink">{t('voicePreviewLargeBottom')}</p>
+              <p className="text-xs text-ink-muted">{t('voicePreviewLargeBottomHint')}</p>
+              <div
+                className="rounded-lg border border-edge bg-surface overflow-auto"
+                style={{ height: 'min(58vh, 720px)', minHeight: 400 }}
+              >
+                {previewHtml ? (
+                  <iframe
+                    srcDoc={previewHtml}
+                    title={t('voicePreviewLargeBottom')}
+                    className="w-full h-full min-h-[400px] border-0 block"
+                    sandbox="allow-same-origin"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center min-h-[320px] text-ink-muted p-4">
+                    {t('preview')}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex flex-wrap gap-2 justify-center">
               <button
                 type="button"
                 onClick={() => setShowTextEdit((v) => !v)}
-                className="rounded-xl bg-white border border-violet-200 hover:bg-violet-50 text-violet-700 px-5 py-2.5 font-medium transition touch-manipulation"
+                className="rounded-xl bg-surface border border-voice-soft/60 hover:bg-voice-soft text-voice px-5 py-2.5 font-medium transition touch-manipulation"
               >
                 {t('voiceEditByText')}
               </button>
@@ -620,27 +718,27 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
                 type="button"
                 onClick={handleSave}
                 disabled={!voiceResult || saving}
-                className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 font-medium disabled:opacity-50 transition touch-manipulation"
+                className="rounded-xl bg-primary hover:opacity-90 text-on-primary px-5 py-2.5 font-medium disabled:opacity-50 transition touch-manipulation"
               >
                 {saving ? t('voiceSaving') : t('voiceSave')}
               </button>
               <button
                 type="button"
                 onClick={handleRegenerate}
-                className="rounded-xl bg-violet-600 hover:bg-violet-700 text-white px-5 py-2.5 font-medium transition touch-manipulation"
+                className="rounded-xl bg-voice hover:opacity-90 text-white px-5 py-2.5 font-medium transition touch-manipulation"
               >
                 {t('voiceRegenerate')}
               </button>
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 px-5 py-2.5 font-medium transition touch-manipulation"
+                className="rounded-xl bg-surface-2 hover:bg-surface-3 text-ink px-5 py-2.5 font-medium transition touch-manipulation"
               >
                 {t('voiceClose')}
               </button>
             </div>
             {showTextEdit && voiceResult?.schema ? (
-              <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4 space-y-3">
+              <div className="rounded-xl border border-edge bg-surface p-3 sm:p-4 space-y-3">
                 <DynamicForm
                   schema={voiceResult.schema}
                   formData={editingFormData}
@@ -651,7 +749,7 @@ export default function VoiceResumeModal({ open, onClose, onSave }) {
                   type="button"
                   onClick={handleApplyTextEdits}
                   disabled={updatingPreview}
-                  className="w-full rounded-xl bg-violet-600 hover:bg-violet-700 text-white px-5 py-2.5 font-medium disabled:opacity-60 transition"
+                  className="w-full rounded-xl bg-voice hover:opacity-90 text-white px-5 py-2.5 font-medium disabled:opacity-60 transition"
                 >
                   {updatingPreview ? t('voiceUpdatingPreview') : t('voiceApplyTextEdits')}
                 </button>

@@ -1,16 +1,10 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
-import {
-  TEMPLATE_LIST,
-  getSchema,
-  getDefaultData,
-  getTemplateBuffer,
-} from '../data/defaultTemplates.js';
-import { xlsxToStyledHtml } from '../utils/xlsxToStyledHtml.js';
-import mammoth from 'mammoth';
+import { TEMPLATE_LIST } from '../data/templateList.js';
 
 const router = Router();
 
+/** Lightweight list — no ExcelJS/mammoth until a specific template is opened. */
 router.get('/', requireAuth, (_req, res) => {
   res.json({ templates: TEMPLATE_LIST });
 });
@@ -18,6 +12,18 @@ router.get('/', requireAuth, (_req, res) => {
 router.get('/:id', requireAuth, async (req, res, next) => {
   try {
     const { id } = req.params;
+    const [
+      { getSchema, getDefaultData },
+      { getTemplateBuffer },
+      mammoth,
+      { xlsxToStyledHtml },
+    ] = await Promise.all([
+      import('../data/templateSchemas.js'),
+      import('../data/defaultTemplates.js'),
+      import('mammoth'),
+      import('../utils/xlsxToStyledHtml.js'),
+    ]);
+
     const schema = getSchema(id);
     if (!schema) {
       return res.status(404).json({ error: 'Template not found' });
@@ -32,7 +38,7 @@ router.get('/:id', requireAuth, async (req, res, next) => {
     let templateHtml = null;
 
     if (id.endsWith('-docx')) {
-      const { value } = await mammoth.convertToHtml({ buffer });
+      const { value } = await mammoth.default.convertToHtml({ buffer });
       templateHtml = `<!DOCTYPE html>
 <html lang="ja">
 <head>

@@ -61,8 +61,8 @@ export default function FileDropzone({ onFile, accept = DEFAULT_ACCEPT, disabled
     <div
       className={`
         rounded-xl border-2 border-dashed transition
-        ${drag && !disabled ? 'border-emerald-500 bg-emerald-50/50' : 'border-slate-200 bg-slate-50/50'}
-        ${disabled ? 'opacity-60 pointer-events-none' : 'cursor-pointer hover:border-slate-300'}
+        ${drag && !disabled ? 'border-primary bg-primary-soft/50' : 'border-edge bg-surface-2/50'}
+        ${disabled ? 'opacity-60 pointer-events-none' : 'cursor-pointer hover:border-surface-3'}
         ${className}
       `}
       onDragOver={(e) => {
@@ -81,9 +81,9 @@ export default function FileDropzone({ onFile, accept = DEFAULT_ACCEPT, disabled
           disabled={disabled}
         />
         <span className="text-3xl sm:text-4xl mb-2">📄</span>
-        <span className="text-slate-600 font-medium text-sm sm:text-base">{t('dropOrClick')}</span>
-        <span className="text-slate-400 text-xs sm:text-sm mt-1">{t('pdfDocxMax')}</span>
-        {error && <p className="mt-2 text-sm text-amber-600">{error}</p>}
+        <span className="text-ink-muted font-medium text-sm sm:text-base">{t('dropOrClick')}</span>
+        <span className="text-ink-faint text-xs sm:text-sm mt-1">{t('pdfDocxMax')}</span>
+        {error && <p className="mt-2 text-sm text-warning">{error}</p>}
       </label>
     </div>
   );

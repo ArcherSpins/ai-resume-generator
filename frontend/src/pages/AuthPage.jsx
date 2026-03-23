@@ -17,22 +17,22 @@ export default function AuthPage() {
   }, [error]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4 py-8 sm:py-12 safe-area-pb">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-auth-hero px-4 py-8 sm:py-12 safe-area-pb">
       <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
-        <LanguageSwitcher variant="dark" />
+        <LanguageSwitcher variant="onDark" />
       </div>
       <div className="w-full max-w-sm rounded-2xl bg-white/5 border border-white/10 p-6 sm:p-8 shadow-xl backdrop-blur">
         <div className="text-center mb-6 sm:mb-8">
           <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">{t('appName')}</h1>
-          <p className="mt-2 text-slate-400 text-sm">{t('signInSubtitle')}</p>
+          <p className="mt-2 text-white/65 text-sm">{t('signInSubtitle')}</p>
         </div>
         {error === 'auth' && (
-          <p className="mb-4 text-amber-400 text-sm text-center">{t('signInFailed')}</p>
+          <p className="mb-4 text-warning text-sm text-center">{t('signInFailed')}</p>
         )}
         <button
           type="button"
           onClick={login}
-          className="w-full flex items-center justify-center gap-3 rounded-xl bg-white text-slate-900 font-medium py-3 px-4 hover:bg-slate-100 transition"
+          className="w-full flex items-center justify-center gap-3 rounded-xl bg-white text-zinc-900 font-medium py-3 px-4 hover:bg-zinc-100 transition"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path
