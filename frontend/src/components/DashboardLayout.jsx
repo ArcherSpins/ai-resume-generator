@@ -60,9 +60,6 @@ export default function DashboardLayout() {
               <NavLink to="/dashboard/history" className={navLinkClass}>
                 {t('history')}
               </NavLink>
-              <NavLink to="/dashboard/billing" className={navLinkClass}>
-                {t('billing')}
-              </NavLink>
               <NavLink to="/dashboard/about" className={navLinkClass}>
                 {t('aboutMe')}
               </NavLink>
@@ -88,18 +85,29 @@ export default function DashboardLayout() {
                 {accountMenuOpen && (
                   <div
                     role="menu"
-                    className="absolute right-0 mt-2 w-64 rounded-xl border border-edge bg-surface p-2 shadow-modal"
+                    className="absolute right-0 mt-2 w-72 rounded-2xl border border-edge bg-surface p-3 shadow-modal"
                   >
-                    <div className="px-3 py-2">
-                      <p className="text-xs text-ink-faint uppercase tracking-wide">{t('account')}</p>
+                    <div className="rounded-xl border border-primary/25 bg-primary-soft/35 px-3 py-3">
+                      <p className="text-[11px] text-ink-faint uppercase tracking-wide">{t('billingCurrentCredits')}</p>
+                      <div className="mt-1 flex items-center justify-between gap-3">
+                        <p className="text-2xl leading-none font-bold text-primary">{user?.credits ?? 0}</p>
+                        <NavLink
+                          to="/dashboard/billing"
+                          onClick={() => setAccountMenuOpen(false)}
+                          className="inline-flex items-center justify-center rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-on-primary hover:opacity-90 transition"
+                        >
+                          {t('billingTopUpAction')}
+                        </NavLink>
+                      </div>
+                    </div>
+                    <div className="mt-3 px-1">
+                      <p className="text-[11px] text-ink-faint uppercase tracking-wide">{t('account')}</p>
                       <p className="mt-1 text-sm text-ink-muted truncate" title={user?.email}>
                         {user?.email}
                       </p>
-                      <p className="mt-2 text-xs text-ink-faint uppercase tracking-wide">{t('billingCurrentCredits')}</p>
-                      <p className="text-sm font-semibold text-primary">{user?.credits ?? 0}</p>
                     </div>
-                    <div className="mt-1 border-t border-edge-subtle px-2 pt-2">
-                      <p className="px-1 text-xs text-ink-faint uppercase tracking-wide">{t('themeMenu')}</p>
+                    <div className="mt-3 border-t border-edge-subtle pt-2">
+                      <p className="px-2 text-[11px] text-ink-faint uppercase tracking-wide">{t('themeMenu')}</p>
                       <ThemeToggle variant="menu" className="mt-1" />
                     </div>
                     <button
@@ -108,7 +116,7 @@ export default function DashboardLayout() {
                         setAccountMenuOpen(false);
                         logout();
                       }}
-                      className="mt-2 w-full rounded-lg bg-surface-2 px-3 py-2 text-left text-sm font-medium text-ink-muted hover:bg-surface-3 transition"
+                      className="mt-2 w-full rounded-lg bg-surface-2 px-3 py-2.5 text-left text-sm font-medium text-ink hover:bg-surface-3 transition"
                     >
                       {t('logout')}
                     </button>
@@ -184,13 +192,6 @@ export default function DashboardLayout() {
             >
               {t('aboutMe')}
             </NavLink>
-            <NavLink
-              to="/dashboard/billing"
-              className={navLinkClass}
-              onClick={() => setMenuOpen(false)}
-            >
-              {t('billing')}
-            </NavLink>
 
             <div className="pt-6 mt-6 border-t border-edge-subtle">
               <p className="px-4 mb-2 text-xs font-medium text-ink-faint uppercase tracking-wider">{t('themeMenu')}</p>
@@ -217,6 +218,19 @@ export default function DashboardLayout() {
 
             <div className="pt-4 mt-4 border-t border-edge-subtle space-y-3">
               <p className="px-4 text-xs font-medium text-ink-faint uppercase tracking-wider">{t('account')}</p>
+              <div className="mx-1 rounded-xl border border-primary/25 bg-primary-soft/35 px-3 py-3">
+                <p className="text-[11px] text-ink-faint uppercase tracking-wide">{t('billingCurrentCredits')}</p>
+                <div className="mt-1 flex items-center justify-between gap-3">
+                  <p className="text-xl font-bold text-primary">{user?.credits ?? 0}</p>
+                  <NavLink
+                    to="/dashboard/billing"
+                    onClick={() => setMenuOpen(false)}
+                    className="inline-flex items-center justify-center rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-on-primary hover:opacity-90 transition"
+                  >
+                    {t('billingTopUpAction')}
+                  </NavLink>
+                </div>
+              </div>
               <p className="px-4 text-sm text-ink-muted truncate" title={user?.email}>
                 {user?.email}
               </p>

@@ -9,6 +9,24 @@ import { api } from '../services/api';
 import { invalidateHistoryCache } from '../services/historyCache';
 import { useTranslation } from '../i18n/LanguageContext';
 
+function CreditsEmptyIllustration() {
+  return (
+    <div className="mx-auto w-full max-w-[220px] rounded-xl border border-voice-soft/40 bg-gradient-to-b from-voice-soft/40 to-surface p-3">
+      <div className="relative mx-auto h-28 w-28">
+        <div className="absolute inset-0 rounded-full bg-voice-soft/60" />
+        <svg viewBox="0 0 120 120" className="relative h-full w-full" aria-hidden>
+          <ellipse cx="60" cy="58" rx="34" ry="36" fill="#fbd5c0" />
+          <path d="M30 55c0-22 13-36 30-36s30 14 30 36v4H30z" fill="#4b2f25" />
+          <circle cx="47" cy="58" r="3.2" fill="#2d1b0e" />
+          <circle cx="73" cy="58" r="3.2" fill="#2d1b0e" />
+          <path d="M47 78c4-5 22-5 26 0" stroke="#8b3f3f" strokeWidth="3" strokeLinecap="round" fill="none" />
+          <path d="M35 92c8-6 14-3 20 3M85 92c-8-6-14-3-20 3" stroke="#8b5cf6" strokeWidth="3" strokeLinecap="round" fill="none" />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
 function DocxPreview({ docxBase64 }) {
   const containerRef = useRef(null);
 
@@ -606,22 +624,32 @@ if(typeof docx!=='undefined') docx.renderAsync(buf.buffer,document.getElementByI
       <Modal
         open={limitModal.open}
         onClose={() => setLimitModal({ open: false, mode: 'template', limit: 0 })}
-        title={t('limitModalTitle')}
+        title={t('creditsEmptyTitle')}
       >
         <div className="space-y-4">
-          <div className="rounded-xl border border-danger/35 bg-danger-soft px-4 py-3 text-danger text-sm sm:text-base">
-            {limitModal.mode === 'voice'
-              ? t('voiceLimitExceededMessage').replace('{limit}', String(limitModal.limit || 5))
-              : t('templateLimitExceededMessage').replace('{limit}', String(limitModal.limit || 10))}
+          <CreditsEmptyIllustration />
+          <div className="rounded-xl border border-warning/30 bg-warning-soft/40 px-4 py-3 text-sm sm:text-base text-ink">
+            {t('creditsEmptyMessage')}
           </div>
-          <p className="text-ink-muted text-sm">{t('limitModalHint')}</p>
-          <button
-            type="button"
-            onClick={() => setLimitModal({ open: false, mode: 'template', limit: 0 })}
-            className="w-full rounded-xl bg-ink text-surface py-2.5 font-medium hover:opacity-90 transition"
-          >
-            {t('voiceClose')}
-          </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setLimitModal({ open: false, mode: 'template', limit: 0 });
+                navigate('/dashboard/billing');
+              }}
+              className="rounded-xl bg-primary text-on-primary py-2.5 font-semibold hover:opacity-90 transition"
+            >
+              {t('billingTopUpAction')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setLimitModal({ open: false, mode: 'template', limit: 0 })}
+              className="rounded-xl bg-surface-2 text-ink py-2.5 font-medium hover:bg-surface-3 transition"
+            >
+              {t('billingCancelAction')}
+            </button>
+          </div>
         </div>
       </Modal>
 

@@ -219,6 +219,10 @@ export const translations = {
     billingSuccess: 'Payment successful. Credits have been added.',
     billingCancelled: 'Payment cancelled.',
     billingConfirming: 'Confirming payment...',
+    billingTopUpAction: 'Top up',
+    billingCancelAction: 'Cancel',
+    creditsEmptyTitle: 'Credits ended',
+    creditsEmptyMessage: 'You are out of credits. Please top up your balance to continue generation.',
   },
   ja: {
     appName: 'AI履歴書ビルダー',
@@ -430,6 +434,10 @@ export const translations = {
     billingSuccess: '支払いが完了し、クレジットが追加されました。',
     billingCancelled: '支払いをキャンセルしました。',
     billingConfirming: '支払いを確認中...',
+    billingTopUpAction: 'チャージ',
+    billingCancelAction: 'キャンセル',
+    creditsEmptyTitle: 'クレジット不足',
+    creditsEmptyMessage: 'クレジットが不足しています。生成を続けるには残高をチャージしてください。',
   },
   ru: {
     appName: 'AI Конструктор резюме',
@@ -641,6 +649,10 @@ export const translations = {
     billingSuccess: 'Оплата успешна. Кредиты начислены.',
     billingCancelled: 'Оплата отменена.',
     billingConfirming: 'Подтверждаем оплату...',
+    billingTopUpAction: 'Пополнить',
+    billingCancelAction: 'Отмена',
+    creditsEmptyTitle: 'Кредиты закончились',
+    creditsEmptyMessage: 'У вас закончились кредиты. Пополните баланс, чтобы продолжить генерацию.',
   },
 };
 
