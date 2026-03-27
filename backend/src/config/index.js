@@ -24,6 +24,10 @@ export const config = {
   openai: {
     apiKey: process.env.OPENAI_API_KEY,
   },
+  stripe: {
+    secretKey: process.env.STRIPE_SECRET_KEY,
+    publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
+  },
   smtp: {
     host: process.env.SMTP_HOST,
     port: parseInt(process.env.SMTP_PORT || '587', 10),

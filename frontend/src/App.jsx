@@ -5,6 +5,7 @@ import DashboardLayout from './components/DashboardLayout';
 import CreateResumePage from './pages/CreateResumePage';
 import HistoryPage from './pages/HistoryPage';
 import AboutPage from './pages/AboutPage';
+import BillingPage from './pages/BillingPage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -54,6 +55,7 @@ export default function App() {
         <Route index element={<Navigate to="create" replace />} />
         <Route path="create" element={<CreateResumePage />} />
         <Route path="history" element={<HistoryPage />} />
+        <Route path="billing" element={<BillingPage />} />
         <Route path="about" element={<AboutPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

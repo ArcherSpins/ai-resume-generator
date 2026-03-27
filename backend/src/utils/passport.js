@@ -3,6 +3,21 @@ import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { config } from '../config/index.js';
 import { prisma } from './prisma.js';
 
+async function getCreditsConfig() {
+  const configRow = await prisma.creditsConfig.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
+      id: 1,
+      defaultCredits: 300,
+      templateGenerationCost: 40,
+      voiceGenerationCost: 90,
+    },
+    select: { defaultCredits: true },
+  });
+  return configRow;
+}
+
 export function setupPassport(app) {
   const callbackURL = `${config.backendUrl}/auth/google/callback`;
   passport.use(
@@ -20,8 +35,9 @@ export function setupPassport(app) {
           if (!email) return done(new Error('No email from Google'));
           let user = await prisma.user.findUnique({ where: { email } });
           if (!user) {
+            const creditsConfig = await getCreditsConfig();
             user = await prisma.user.create({
-              data: { email, name, avatar, templateCredits: 10, voiceCredits: 5 },
+              data: { email, name, avatar, credits: creditsConfig.defaultCredits },
             });
           } else {
             user = await prisma.user.update({
@@ -34,8 +50,7 @@ export function setupPassport(app) {
             email: user.email,
             name: user.name,
             avatar: user.avatar,
-            templateCredits: user.templateCredits,
-            voiceCredits: user.voiceCredits,
+            credits: user.credits,
           });
         } catch (err) {
           return done(err);
@@ -54,8 +69,7 @@ export function setupPassport(app) {
           email: true,
           name: true,
           avatar: true,
-          templateCredits: true,
-          voiceCredits: true,
+          credits: true,
         },
       });
       done(null, user);

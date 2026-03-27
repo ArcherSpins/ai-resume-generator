@@ -8,14 +8,23 @@ datasource db {
 }
 
 model User {
-  id              String   @id @default(cuid())
-  email           String   @unique
-  name            String?
-  avatar          String?
-  templateCredits Int      @default(10)
-  voiceCredits    Int      @default(5)
-  createdAt       DateTime @default(now())
-  resumes         Resume[]
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  avatar    String?
+  credits   Int      @default(300)
+  createdAt DateTime @default(now())
+  resumes   Resume[]
+  payments  Payment[]
+}
+
+model CreditsConfig {
+  id                     Int      @id @default(1)
+  defaultCredits         Int      @default(300)
+  templateGenerationCost Int      @default(40)
+  voiceGenerationCost    Int      @default(90)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 }
 
 model Resume {
@@ -26,6 +35,21 @@ model Resume {
   data      Json?
   filePath  String?
   createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Payment {
+  id                   String   @id @default(cuid())
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripeCheckoutId     String   @unique
+  amountYen            Int
+  creditsGranted       Int
+  status               String   @default("pending")
+  creditedAt           DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   @@index([userId])
 }

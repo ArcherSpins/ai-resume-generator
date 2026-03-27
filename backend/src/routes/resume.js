@@ -18,8 +18,24 @@ import {
 import { config } from '../config/index.js';
 
 const router = Router();
-const DEFAULT_TEMPLATE_CREDITS = 10;
-const DEFAULT_VOICE_CREDITS = 5;
+
+async function getCreditsConfig(db = prisma) {
+  return db.creditsConfig.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
+      id: 1,
+      defaultCredits: 300,
+      templateGenerationCost: 40,
+      voiceGenerationCost: 90,
+    },
+    select: {
+      defaultCredits: true,
+      templateGenerationCost: true,
+      voiceGenerationCost: true,
+    },
+  });
+}
 
 /**
  * Collect all keys of the form `prefix` or `prefix_N` from data,
@@ -88,28 +104,17 @@ async function storeFile(buffer, filename, mimeType, userId) {
 async function getUserCredits(userId) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { templateCredits: true, voiceCredits: true },
+    select: { credits: true },
   });
   if (!user) return null;
-  return {
-    templateCredits:
-      typeof user.templateCredits === 'number' ? user.templateCredits : DEFAULT_TEMPLATE_CREDITS,
-    voiceCredits:
-      typeof user.voiceCredits === 'number' ? user.voiceCredits : DEFAULT_VOICE_CREDITS,
-  };
+  const config = await getCreditsConfig();
+  return typeof user.credits === 'number' ? user.credits : config.defaultCredits;
 }
 
-async function consumeCredit(db, userId, generationMode) {
-  if (generationMode === 'voice') {
-    const result = await db.user.updateMany({
-      where: { id: userId, voiceCredits: { gt: 0 } },
-      data: { voiceCredits: { decrement: 1 } },
-    });
-    return result.count > 0;
-  }
+async function consumeCredit(db, userId, cost) {
   const result = await db.user.updateMany({
-    where: { id: userId, templateCredits: { gt: 0 } },
-    data: { templateCredits: { decrement: 1 } },
+    where: { id: userId, credits: { gte: cost } },
+    data: { credits: { decrement: cost } },
   });
   return result.count > 0;
 }
@@ -124,18 +129,24 @@ router.post('/', requireAuth, async (req, res, next) => {
       return res.status(400).json({ error: 'schema and data required' });
     }
 
+    const creditsConfig = await getCreditsConfig();
+    const generationCost =
+      generationMode === 'voice'
+        ? creditsConfig.voiceGenerationCost
+        : creditsConfig.templateGenerationCost;
+
     const credits = await getUserCredits(req.user.id);
     if (!credits) {
       return res.status(404).json({ error: 'User not found' });
     }
-    if (generationMode === 'voice' && credits.voiceCredits <= 0) {
+    if (generationMode === 'voice' && credits < creditsConfig.voiceGenerationCost) {
       return res.status(403).json({
         error: 'Voice resume limit reached (0 remaining).',
         code: 'VOICE_LIMIT_REACHED',
         limit: 0,
       });
     }
-    if (generationMode === 'template' && credits.templateCredits <= 0) {
+    if (generationMode === 'template' && credits < creditsConfig.templateGenerationCost) {
       return res.status(403).json({
         error: 'Template resume limit reached (0 remaining).',
         code: 'TEMPLATE_LIMIT_REACHED',
@@ -220,7 +231,7 @@ router.post('/', requireAuth, async (req, res, next) => {
     schemaToStore.generatedFiles = generatedFiles;
 
     const resume = await prisma.$transaction(async (tx) => {
-      const consumed = await consumeCredit(tx, req.user.id, generationMode);
+      const consumed = await consumeCredit(tx, req.user.id, generationCost);
       if (!consumed) {
         const err = new Error(
           generationMode === 'voice'

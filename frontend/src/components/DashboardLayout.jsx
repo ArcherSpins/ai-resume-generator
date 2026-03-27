@@ -60,6 +60,9 @@ export default function DashboardLayout() {
               <NavLink to="/dashboard/history" className={navLinkClass}>
                 {t('history')}
               </NavLink>
+              <NavLink to="/dashboard/billing" className={navLinkClass}>
+                {t('billing')}
+              </NavLink>
               <NavLink to="/dashboard/about" className={navLinkClass}>
                 {t('aboutMe')}
               </NavLink>
@@ -92,6 +95,8 @@ export default function DashboardLayout() {
                       <p className="mt-1 text-sm text-ink-muted truncate" title={user?.email}>
                         {user?.email}
                       </p>
+                      <p className="mt-2 text-xs text-ink-faint uppercase tracking-wide">{t('billingCurrentCredits')}</p>
+                      <p className="text-sm font-semibold text-primary">{user?.credits ?? 0}</p>
                     </div>
                     <div className="mt-1 border-t border-edge-subtle px-2 pt-2">
                       <p className="px-1 text-xs text-ink-faint uppercase tracking-wide">{t('themeMenu')}</p>
@@ -178,6 +183,13 @@ export default function DashboardLayout() {
               onClick={() => setMenuOpen(false)}
             >
               {t('aboutMe')}
+            </NavLink>
+            <NavLink
+              to="/dashboard/billing"
+              className={navLinkClass}
+              onClick={() => setMenuOpen(false)}
+            >
+              {t('billing')}
             </NavLink>
 
             <div className="pt-6 mt-6 border-t border-edge-subtle">

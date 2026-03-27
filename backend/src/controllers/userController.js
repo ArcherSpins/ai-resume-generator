@@ -7,7 +7,6 @@ export function getCurrentUser(req, res, next) {
     email: req.user.email,
     name: req.user.name,
     avatar: req.user.avatar,
-    templateCredits: req.user.templateCredits,
-    voiceCredits: req.user.voiceCredits,
+    credits: req.user.credits,
   });
 }
