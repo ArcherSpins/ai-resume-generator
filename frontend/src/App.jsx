@@ -6,6 +6,7 @@ import CreateResumePage from './pages/CreateResumePage';
 import HistoryPage from './pages/HistoryPage';
 import AboutPage from './pages/AboutPage';
 import BillingPage from './pages/BillingPage';
+import PublicInfoPage from './pages/PublicInfoPage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -44,6 +45,10 @@ export default function App() {
           </PublicOnly>
         }
       />
+      <Route path="/privacy" element={<PublicInfoPage />} />
+      <Route path="/terms" element={<PublicInfoPage />} />
+      <Route path="/refund" element={<PublicInfoPage />} />
+      <Route path="/contact" element={<PublicInfoPage />} />
       <Route
         path="/dashboard"
         element={
