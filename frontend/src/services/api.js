@@ -103,6 +103,17 @@ export const api = {
   getHistoryById: (id) => request(`/history/${id}`),
   updateHistory: (id, payload) =>
     request(`/history/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  getBillingConfig: () => request('/billing/config'),
+  createCheckoutSession: (amountYen) =>
+    request('/billing/create-checkout-session', {
+      method: 'POST',
+      body: JSON.stringify({ amountYen }),
+    }),
+  confirmCheckoutSession: (sessionId) =>
+    request('/billing/confirm-checkout-session', {
+      method: 'POST',
+      body: JSON.stringify({ sessionId }),
+    }),
 };
 
 export function resumePdfUrl(path) {

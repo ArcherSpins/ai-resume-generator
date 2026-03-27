@@ -16,8 +16,7 @@ export function requireAuth(req, res, next) {
             email: true,
             name: true,
             avatar: true,
-            templateCredits: true,
-            voiceCredits: true,
+            credits: true,
           },
         })
         .then((user) => {

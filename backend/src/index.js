@@ -18,6 +18,7 @@ import templatesRoutes from './routes/templates.js';
 import postalCodeRoutes from './routes/postalCode.js';
 import voiceToResumeRoutes from './routes/voiceToResume.js';
 import apiDocsRoutes from './routes/apiDocs.js';
+import billingRoutes from './routes/billing.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -87,6 +88,7 @@ app.use('/templates', templatesRoutes);
 app.use('/postal-code', postalCodeRoutes);
 app.use('/voice-to-resume', voiceToResumeRoutes);
 app.use('/api-docs', apiDocsRoutes);
+app.use('/billing', billingRoutes);
 
 app.use('/resumes', express.static(path.join(__dirname, '..', config.resumesDir)));
 

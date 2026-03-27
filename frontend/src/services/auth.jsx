@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { api, setAuthToken } from './api';
 
 const AuthContext = createContext(null);
@@ -6,6 +6,12 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const refreshUser = useCallback(async () => {
+    const data = await api.getUser();
+    setUser(data);
+    return data;
+  }, []);
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -15,12 +21,10 @@ export function AuthProvider({ children }) {
       url.searchParams.delete('token');
       window.history.replaceState({}, '', url.toString());
     }
-    api
-      .getUser()
-      .then((data) => setUser(data))
+    refreshUser()
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
-  }, []);
+  }, [refreshUser]);
 
   const login = () => {
     const base = import.meta.env.VITE_API_URL || '';
@@ -38,7 +42,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
